@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+<style>
+body {
+  background-color: #222;
+  font-family: Monospace;
+  font-size: 18px;
+  margin: 0px;
+}
+p {
+  color: white;
+  text-align: left;
+}
+.centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.glow {
+	color: #66ff00;
+  text-shadow: 0 0 1px #66ff00, 0 0 2px #66ff00, 0 0 4px #66ff00, 0 0 8px #66ff00;
+}
+.glow:hover {
+	text-shadow: 0 0 4px #66ff00, 0 0 8px #66ff00, 0 0 16px #66ff00, 0 0 32px #66ff00;
+}
+.shadowInput {
+	border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
+.centerObj {
+  width: 100px;
+  height: 50px;
+  /*border: 2px solid purple;*/
+  font-size: 80px;
+  color: #66ff00;
+  width: auto;
+  height: auto;
+}
+.banner {
+  background-color: black;
+  width: 100%;
+  height: 45px;
+  padding: 0px;
+  margin: 0px;
+}
+.billboard {
+  /*background-image: url("static/bw.jpg");*/
+  background-image: url("static/billboard.png");
+
+  background-repeat: no-repeat;
+  background-size:cover;
+  height: 350px;
+  width: 1200px;
+  margin-top: 25px;
+}
+nav {
+  padding-top: 8px;
+  display: block;
+  text-align: center;
+  width: 80%;
+  padding-left: 10%;
+}
+a:link {
+  text-decoration: none;
+}
+.navElements {
+  padding-left: 6%;
+}
+h2, h3, h4 {
+  color: grey;
+  text-align: left;
+}
+.content {
+  width: 1200px;
+}
+</style>
+<title>0x86sec.org</title>
+</head>
+
+<body>
+  <div class="banner">
+    <nav>
+      <a class="glow" href="localhost:5000/">$0x86sec</a>
+      <a class="glow navElements" style="padding-left: 15%" href="localhost:5000/">Home</a>
+      <a class="glow navElements" href="#">Posts</a>
+      <a class="glow navElements" href="#">Downloads</a>
+      <a class="glow navElements" href="#">About</a>
+      <a class="glow navElements" href="#">About</a>
+    </nav>
+  </div>
+  <center><div class="billboard"></div>
+  <div class="content">
+    <br>
+    <h2>Home</h2>
+    <hr>
+    <br>
+    <p>Hello world</p>
+  </div>
+  </center>
+</body>
+
+</html>
