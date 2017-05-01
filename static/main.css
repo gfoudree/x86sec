@@ -9,6 +9,21 @@ p {
   color: white;
   text-align: left;
 }
+nav {
+  padding-top: 8px;
+  display: block;
+  text-align: center;
+  overflow: hidden;
+  width: 100%;
+  margin: auto;
+}
+a:link {
+  text-decoration: none;
+}
+h2, h3, h4 {
+  color: grey;
+  text-align: left;
+}
 .centered {
   position: fixed;
   top: 50%;
@@ -40,23 +55,8 @@ p {
   width: 100%;
   margin-top: 25px;
 }
-nav {
-  padding-top: 8px;
-  display: block;
-  text-align: center;
-  overflow: hidden;
-  width: 100%;
-  margin: auto;
-}
-a:link {
-  text-decoration: none;
-}
 .navElements {
   padding-left: 10%;
-}
-h2, h3, h4 {
-  color: grey;
-  text-align: left;
 }
 .content {
   width: 1200px;
@@ -67,4 +67,7 @@ h2, h3, h4 {
   margin: auto;
   padding-left: 25px;
   padding-right: 25px;
+}
+.homeButton {
+  margin-left: 100px;
 }
