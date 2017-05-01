@@ -48,7 +48,7 @@ h2, h3, h4 {
   margin: 0px;
 }
 .billboard {
-  background-image: url("billboard.png");
+  background-image: url("billboard.jpg");
   background-repeat: no-repeat;
   background-size: cover;
   height: 350px;
@@ -70,4 +70,8 @@ h2, h3, h4 {
 }
 .homeButton {
   margin-left: 100px;
+}
+.githubImage {
+  width: 80px;
+  border-radius: 20px;
 }

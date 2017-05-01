@@ -1,11 +1,11 @@
 from flask import Flask, render_template, make_response
 app = Flask(__name__)
 
-headers = {'X-Frame-Sptions' : 'SAMEORIGIN',
+headers = {'X-Frame-Options' : 'SAMEORIGIN',
 			'X-XSS-Protection' : '1; mode=block',
 			'X-Content-Type-Options' : 'nosniff',
-			'Content-Security-Policy' : 'default-src \'none\'; style-src *.x86sec.com https://fonts.googleapis.com; font-src https://fonts.googleapis.com; img-src *.x86sec.com;',
-			'Referrer-Policy' : 'origin'}
+			'Content-Security-Policy' : 'default-src \'none\'; style-src http://localhost:5000 *.x86sec.com https://fonts.googleapis.com; font-src https://fonts.googleapis.com https://fonts.gstatic.com; img-src http://localhost:5000 *.x86sec.com;',
+			'Referrer-Policy' : 'no-referrer-when-downgrade'}
 
 @app.route('/')
 def index():
