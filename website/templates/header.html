@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -6,7 +7,7 @@
     <meta name="keywords" content="security, cyber, x86, computer">
     <meta name="author" content="Grant Foudree">
     <meta name="description" content="Security research website">
-    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='main.css')}}">
+    <link rel="stylesheet" type="text/css" href="{% static 'main.css' %}">
     <title>x86sec.org</title>
   </head>
 
@@ -14,12 +15,12 @@
     <div class="navbar">
       <nav>
         <div class="wrapper">
-        <a class="glow" href="#">$0x86sec</a>
-        <a class="glow navElements homeButton" href="{{url_for('index')}}">Home</a>
-        <a class="glow navElements" href="{{url_for('projects')}}">Projects</a>
-        <a class="glow navElements" href="{{url_for('posts')}}">Posts</a>
-        <a class="glow navElements" href="{{url_for('downloads')}}">Downloads</a>
-        <a class="glow navElements" href="{{url_for('about')}}">About</a>
+        <a class="glow" href="{% url 'index' %}">$0x86sec</a>
+        <a class="glow navElements homeButton" href="{% url 'index' %}">Home</a>
+        <a class="glow navElements" href="{% url 'projects' %}">Projects</a>
+        <a class="glow navElements" href="{% url 'posts' %}">Posts</a>
+        <a class="glow navElements" href="{% url 'downloads' %}">Downloads</a>
+        <a class="glow navElements" href="{% url 'about' %}">About</a>
       </div>
       </nav>
     </div>
