@@ -24,7 +24,6 @@ ul {
 }
 a:link {
   text-decoration: none;
-  color: #8000ff;
 }
 a:visited {
   text-decoration: none;
@@ -41,6 +40,9 @@ h2, h3, h4 {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+.hyperlink {
+    color: #8000ff;
 }
 .glow {
 	color: #66ff00;
