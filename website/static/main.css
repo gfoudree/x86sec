@@ -7,18 +7,30 @@ body {
 }
 p {
   color: white;
+  font-size: 13px;
   text-align: left;
 }
 nav {
-  padding-top: 8px;
+  padding-top: 10px;
   display: block;
   text-align: center;
   overflow: hidden;
   width: 100%;
   margin: auto;
 }
+ul {
+  color: white;
+  font-size: 13px;
+}
 a:link {
   text-decoration: none;
+  color: #8000ff;
+}
+a:visited {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
 }
 h2, h3, h4 {
   color: grey;
@@ -32,9 +44,11 @@ h2, h3, h4 {
 }
 .glow {
 	color: #66ff00;
+  text-decoration: none;
   text-shadow: 0 0 1px #66ff00, 0 0 2px #66ff00, 0 0 4px #66ff00, 0 0 8px #66ff00;
 }
 .glow:hover {
+  text-decoration: none;
 	text-shadow: 0 0 4px #66ff00, 0 0 8px #66ff00, 0 0 16px #66ff00, 0 0 32px #66ff00;
 }
 .shadowInput {
@@ -60,6 +74,7 @@ h2, h3, h4 {
 }
 .content {
   width: 1200px;
+  height: 1200px;
 }
 .wrapper {
   width: 1200px;
@@ -74,4 +89,15 @@ h2, h3, h4 {
 .githubImage {
   width: 80px;
   border-radius: 20px;
+}
+.footer {
+  height: 200px;
+}
+.reverseEmail {
+  direction: rtl;
+  unicode-bidi: bidi-override;
+}
+#pgpkey {
+  opacity: 0;
+  width: 500px;
 }
