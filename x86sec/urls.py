@@ -20,8 +20,9 @@ from website import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', views.index, name='index'),
-    url(r'^projects/', views.projects, name="projects"),
-    url(r'^downloads/', views.downloads, name="downloads"),
-    url(r'^posts/', views.posts, name="posts"),
-    url(r'^about/', views.about, name="about"),
+    url(r'^projects/$', views.projects, name="projects"),
+    url(r'^projects/(?P<id>\w+)/$', views.projectViewer, name="projectViewer"),
+    url(r'^downloads/$', views.downloads, name="downloads"),
+    url(r'^posts/$', views.posts, name="posts"),
+    url(r'^about/$', views.about, name="about"),
 ]

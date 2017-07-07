@@ -1,2 +1,7 @@
 {% include 'header.html' %}
+<ul>
+  {% for p in projects %}
+  	<li><a href="{% url 'projects' 'kek' %}/">{{ p.name }} - {{ p.title }}</a></li>
+  {% endfor %}
+</ul>
 {% include 'footer.html' %}
