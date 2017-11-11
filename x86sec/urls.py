@@ -23,6 +23,5 @@ urlpatterns = [
     url(r'^projects/$', views.projects, name="projects"),
     url(r'^projects/(?P<id>\w+)/$', views.projectViewer, name="projectViewer"),
     url(r'^downloads/$', views.downloads, name="downloads"),
-    url(r'^posts/$', views.posts, name="posts"),
     url(r'^about/$', views.about, name="about"),
 ]

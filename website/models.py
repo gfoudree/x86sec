@@ -9,7 +9,6 @@ class Post(models.Model):
     tags = models.CharField(max_length=100)
     content = models.TextField()
     title = models.CharField(max_length=100)
-    gpg_signature = models.TextField()
 
 class Download(models.Model):
     tags = models.CharField(max_length=100)

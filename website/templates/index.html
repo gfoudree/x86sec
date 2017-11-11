@@ -1,11 +1,13 @@
 {% include 'header.html' %}
 <div class="content">
+  {% for post in posts %}
     <div class="post">
-      <h1>Post 1</h1>
+      <h1>{{ post.title }}</h1>
       <hr>
       <p>
-        Test data
+        {{ post.content }}
       </p>
     </div>
+  {% endfor %}
 </div>
 {% include 'footer.html' %}

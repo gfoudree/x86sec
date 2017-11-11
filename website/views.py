@@ -3,11 +3,12 @@ from __future__ import unicode_literals
 
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Project
+from website.models import Project, Post
 
 # Create your views here.
 def index(request):
-    return render(request, 'index.html', {'title' : 'Home'})
+    posts = Post.objects.all()
+    return render(request, 'index.html', {'title' : 'Home', 'posts' : posts})
 
 def projects(request):
     projects = Project.objects.all()
@@ -15,9 +16,6 @@ def projects(request):
 
 def projectViewer(request, project):
     return render(request, 'projectViewer.html', {'title' : project})
-
-def posts(request):
-    return render(request, 'posts.html', {'title' : 'Posts'})
 
 def downloads(request):
     return render(request, 'downloads.html', {'title' : 'Downloads'})
