@@ -14,23 +14,15 @@
   </head>
 
   <body>
-    <div class="navbar">
-      <nav>
-        <div class="wrapper">
-        <a class="glow" href="{% url 'index' %}">$0x86sec</a>
-        <a class="glow navElements homeButton" href="{% url 'index' %}">Home</a>
-        <a class="glow navElements" href="{% url 'projects' %}">Projects</a>
-        <a class="glow navElements" href="{% url 'posts' %}">Posts</a>
-        <a class="glow navElements" href="{% url 'downloads' %}">Downloads</a>
-        <a class="glow navElements" href="{% url 'about' %}">About</a>
-      </div>
-      </nav>
+    <div class="header">
+      <center>
+        <img src="{% static 'banner.png' %}" style="max-width: 21%; max-height:21%;"></img>
+        <h1>$0x86sec</h1>
+        <nav>
+          <a href="#">Downloads</a>
+          <a href="#">Projects</a>
+          <a href="#" style="margin-right: 5%">About</a>
+        </nav>
+        <br>
+      </center>
     </div>
-    <div class="wrapper">
-      <div class="billboard">
-      </div>
-      <div class="content">
-        <br>
-        <h2>{{title}}</h2>
-        <hr>
-        <br>

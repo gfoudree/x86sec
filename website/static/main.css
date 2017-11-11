@@ -1,22 +1,35 @@
 body {
-  background-color: #222;
+  background-color: black;
   font-family: Monospace;
   font-size: 18px;
-  margin: 0px;
-  width: 100%;
+}
+.content {
+  margin: auto;
+  width: 60%;
+}
+.post {
+  background-color: #202020;
+  border-width: 0.5px;
+  border-style: solid;
+  border-color: #404040;
+  padding: 0 35px;
+  padding-bottom: 15px;
 }
 p {
   color: white;
   font-size: 13px;
   text-align: left;
 }
-nav {
-  padding-top: 10px;
-  display: block;
+h1 {
+  color: white;
   text-align: center;
-  overflow: hidden;
-  width: 100%;
-  margin: auto;
+}
+h2, h3, h4 {
+  color: #D3D3D3;
+  text-align: center;
+}
+hr {
+  color: #404040;
 }
 ul {
   color: white;
@@ -31,81 +44,14 @@ a:visited {
 a:hover {
   text-decoration: underline;
 }
-h2, h3, h4 {
-  color: grey;
-  text-align: left;
-}
-.centered {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.hyperlink {
-    color: #8000ff;
-}
-.glow {
-	color: #66ff00;
-  text-decoration: none;
-  text-shadow: 0 0 1px #66ff00, 0 0 2px #66ff00, 0 0 4px #66ff00, 0 0 8px #66ff00;
-}
-.glow:hover {
-  text-decoration: none;
-	text-shadow: 0 0 4px #66ff00, 0 0 8px #66ff00, 0 0 16px #66ff00, 0 0 32px #66ff00;
-}
-.shadowInput {
-	border-radius: 5px;
-	-webkit-border-radius: 5px;
-}
-.navbar {
-  background-color: black;
-  width: 100vr;
-  height: 45px;
-  margin: 0px;
-}
-.billboard {
-  background-image: url("billboard.jpg");
-  background-repeat: no-repeat;
-  background-size: cover;
-  height: 350px;
-  width: 100%;
-  margin-top: 25px;
-}
-.navElements {
-  padding-left: 10%;
-}
-.content {
-  width: 1200px;
-  height: 1200px;
-}
-.wrapper {
-  width: 1200px;
-  position: relative;
+.header {
+  padding-top: 20px;
+  padding-bottom: 20px;
   margin: auto;
-  padding-left: 25px;
-  padding-right: 25px;
 }
-.homeButton {
-  margin-left: 100px;
+a {
+  color: #8000ff;
 }
-.githubImage {
-  width: 80px;
-  border-radius: 20px;
-}
-.footer {
-  height: 200px;
-}
-.reverseEmail {
-  direction: rtl;
-  unicode-bidi: bidi-override;
-}
-#pgpkey {
-  opacity: 0;
-  width: 500px;
-}
-.post {
-  background-color: black;
-  border-width: 0.5px;
-  border-style: solid;
-  border-color: #808080;
+nav a {
+  margin: 0 3%;
 }
