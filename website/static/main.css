@@ -17,7 +17,7 @@ body {
 }
 p {
   color: white;
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
 }
 h1 {
@@ -54,4 +54,8 @@ a {
 }
 nav a {
   margin: 0 3%;
+}
+.post img {
+  width: 50%;
+  margin: 1% auto;
 }

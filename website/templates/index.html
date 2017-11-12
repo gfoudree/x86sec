@@ -4,10 +4,10 @@
     <div class="post">
       <h1>{{ post.title }}</h1>
       <hr>
-      <p>
-        {{ post.content }}
-      </p>
+      {% include post.content %}
     </div>
+    <br>
+    <br>
   {% endfor %}
 </div>
 {% include 'footer.html' %}

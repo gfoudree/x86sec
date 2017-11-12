@@ -7,13 +7,13 @@ from django.db import models
 class Post(models.Model):
     pub_date = models.DateTimeField()
     tags = models.CharField(max_length=100)
-    content = models.TextField()
+    content = models.CharField(max_length=50)
     title = models.CharField(max_length=100)
 
 class Download(models.Model):
     tags = models.CharField(max_length=100)
     name = models.CharField(max_length=50)
-    os = models.CharField(max_length=15)
+    os = models.CharField(max_length=15, blank=True)
     description = models.TextField()
     link = models.URLField()
 

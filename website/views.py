@@ -3,21 +3,19 @@ from __future__ import unicode_literals
 
 from django.shortcuts import render
 from django.http import HttpResponse
-from website.models import Project, Post
+from website.models import Project, Post, Download
 
 # Create your views here.
 def index(request):
-    posts = Post.objects.all()
-    return render(request, 'index.html', {'title' : 'Home', 'posts' : posts})
+    post_objs = Post.objects.all()
+    return render(request, 'index.html', {'title' : 'Home', 'posts' : post_objs})
 
 def projects(request):
-    projects = Project.objects.all()
-    return render(request, 'projects.html', {'title' : 'Projects', 'projects' : projects})
-
-def projectViewer(request, project):
-    return render(request, 'projectViewer.html', {'title' : project})
+    project_objs = Project.objects.all()
+    return render(request, 'projects.html', {'title' : 'Projects', 'projects' : project_objs})
 
 def downloads(request):
+    download_objs = Download.objects.all()
     return render(request, 'downloads.html', {'title' : 'Downloads'})
 
 def about(request):
