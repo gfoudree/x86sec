@@ -1,70 +1,31 @@
 {% include 'header.html' %}
-<p>
-  I'm Grant Foudree, a Computer Engineering student at Iowa State University.<br><br>
-  My technical interests include:<br>
-  <ul>
-    <li>Computer security (Network, OS &amp; Kernel)</li>
-    <li>Programming (C/C++, x86_64 ASM, Python, Ruby)</li>
-    <li>Low-level computer architecture</li>
-    <li>Linux &amp; BSD (OpenBSD)</li>
-    <li>Cryptography</li>
-  </ul>
-</p>
-<p>
-  Github: <a class="hyperlink" href="https://github.com/gfoudree">https://github.com/gfoudree</a><br>
-  Email: <span class="reverseEmail">ude.etatsai@eerduofg</span>
-  <span onclick="fadePgpKeyToggle()">(Click for PGP Key)</span>
-</p>
-<div id="pgpkey" onclick="fadePgpKeyToggle()">
-<p>-----BEGIN PGP PUBLIC KEY BLOCK-----<br>
-<br>
-mQINBFXdFagBEAC7zIe89D0c2wBV34vMfBAAVoNGXnkVjPXKrD+F+OX0ZOoGIvI1<br>
-7xl0noYBi4wtG8UwlorN2092Vhpn88x77cV83tYXRJcIyP9MhN86E36OVZmmkJ7/<br>
-6267jG2217zdDG0/2sTJC4HWJJS+v8aI76O8gMgNvdGKMFUSuB+QwjHfVmegWlSZ<br>
-sEZj/pYmensF9kwWFN6e7THvrkYCGmBjY+fCGv2D7GSJiPUIwIZDMYRK7mv1QqSe<br>
-kRRj2TOAeSKq8dKeY+bmj7nQUbmwwrGp+B+rn6VunlZ4OMJBaEiYwWNcqvPFlXRs<br>
-7oE7QqjCIFQGs0oo6X3qJFomJTTTeMMnSDfNXu1M3kwubvohn6ui5nkSMds+tkVY<br>
-mUFgKO1dm5iRjquKQ8DF0keZo5+0xJ+xBIYAdKPNCmkTxzzdzO5wYS8q7J7RAfzH<br>
-Fw4fr6iQfT77KRG+LbkaPvyjHiQHzDggCbmPimzprWaLtdAVmx+qAGkfZtTm0lKK<br>
-0jU7ec+ZZdQTqIbpvZ28UAHEqBQEa+838zuysD5quo187CbVEDyLbOVoebVQZBXG<br>
-sawAlSxUVwhO3WUco7DE/Ax7v65TnmjjDakIRdvWo83/XQSARj0W3YDevUHQUuq3<br>
-oQqYbln+zQTW5q3JeeOLo+rzXq2seuEGcy0NSO70xNngSU3eJHgpCGsxaQARAQAB<br>
-tCRHcmFudCBGb3VkcmVlIDxnZm91ZHJlZUBpYXN0YXRlLmVkdT6JAj4EEwECACgF<br>
-AlXdFagCGwMFCQlmAYAGCwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEF4P9BfQ<br>
-lECBl70P/ilRqDRapFSXKXYt0OTbukxEfCeyUgwwPtL8yWtt9nh39U8dHL8azYff<br>
-KxqNFhfZy0foOCXffByLyr/Jldr/Z2Aanz/vXpzF97DM+/V6kYsJ67TBodtr5c27<br>
-fuW/lo2mCNoSKsAJdIyoBkjlDn+2XEPQuJ0WXCHWdOe+zMcAWLhOfkKEHD3EOsi1<br>
-Si1/SCH71cb3KWG86fXCB3W884ZkANDMfFwsT5V7r10pAuUEyBowsueCByF1qkj/<br>
-yx+TaloG9SznWpsc3zuQU8E4m6xP5mTZDuYDiaPJzIAYB+XQux7azs5IgobCjWRs<br>
-KU3FJ9vC+ERYuJ+pBvQPoxM9Nl+ybph5rA/rrpekte++WdBcsW0dpLmc7ezOKTv3<br>
-cGuy3yTp4DjSLcL+rTIL5qjkS0AkdgLIw8fmZx5/nRiD0Q/1zR7xELggFrg0094h<br>
-NfzDEgWijQ3KW4Syee9+E7j+LFfF+DI1t9I7FtSaWzIkbP8Fv+wkF6xiAqzjM14w<br>
-zS+NyG5VWZZ9yAKszxGmp8SioRCrzHphIazenWanCZG/N4Hm3ReQkbK6qn02OCZR<br>
-9zdFgwV1IIcU7xGJ9b3M59cVDx0egidea6u9KoBeqwqzx5wZz01rUUV2FedRfBFD<br>
-6yeu+hH0s50sskLxesiIR0mfhrRi7fqrfP62hui7CcrZKczygPEzuQINBFXdFagB<br>
-EADSR6wd5r8cBo9RgzSH0I941Y5YrImk/yBYO+BFMTlu+LGw4RV4hTo0jH23vIcY<br>
-rhu3kot/juz1n7CS/J7jzskBbC7AnNnFuY54+ewRcPWKBZv0+xxfLTbl0hjZZcCv<br>
-ndyMeuHBj3lP9zH4nulp+88+fTeuz2JRbQs4VphE5QnpnIcXHay+zcJ6VyoSkaiA<br>
-0Bwadjxy2Dk6j3oGhToVUycjwC6NxA4ek8SWQxwpTthwOUJpL7Pi6d9KeV930yz0<br>
-5xazUDvUisBafe09PGkV9PzzOrDToDORLQQYQh7RRDWqP1IY9ime5fbt2B2NWG67<br>
-uNorORHgcVy+zqZCpDjseouMvwdz2y3ZWI7mZmaF6rJfvxZRty6Oyz7yaZJXyY1a<br>
-mhVSFgi+fYQpIw4Us6HASs2ScsKs0+jYOW0vzpLBLEcewWIs5JSRUY4Pspgl4uY0<br>
-JIlg4Y0c+2vv8dpMJ9D9zHTtsa/Knhc/mKs96lw4rXEFBreE25NpSeCxAZ4E6KKn<br>
-kv4dMhv+IhioM1pRxOTesNfSACfDNgJrqcg4wmK2HAbXS6ePUU1EeUeOOXeuHQ6C<br>
-MRSAKxTu5fyjhqCqHzfWR4sdESml6iMIcFtlf4z4FON+kmgOkDgfG3iP8qGTvTiV<br>
-DDobA+wr4q8BRDDgVTAshORt625Gi/W6/DXkIY03c7TJxwARAQABiQIlBBgBAgAP<br>
-BQJV3RWoAhsMBQkJZgGAAAoJEF4P9BfQlECB1a4P/R53TaDZqzUNaQi0p8zrzoko<br>
-ZWq/Yu3vQ5Z9pLdkTN5LBhtEYC5jrdzgTCT/NfEX4lKz0cDMijwDDfFjrpUvc/fA<br>
-rd/x4bb3Rf+e0Zv39czua/WDerb75/5ZRCbc3WqNGCwbfi55Rdi0s8U0cW/vKMOD<br>
-kyipK5gYXEDcck4joWaPAcH0/0BP7ynOV0ygl+WtDokju0K0QU34QQUHTEiV0nA6<br>
-DlUdbrGGRuJQ7auHXDJWwdW9onn8x76t0HxxiFB0EdU87VW49LQLs8GbBuLQ/kTm<br>
-KsaYL5HyHdh0XUWsRkpl0fsj4fCd1Dv/PWOg8WqWE4QAiz/VTjEFWjdJP1x7KLqS<br>
-1AXKabk+fIm5B0h6QzUbBu5nH7xZ/RepvrxM2YlBVTbpVxi/2tNMOlwbxDUJHpQo<br>
-RkWmWFWEUBFE7FiSu5sX7JlSug2vyiQvhdPRprdifzYQX9ntnhGfQyooP08ajTNz<br>
-fUxyZicTPn74grOizCvIrQ+HWxRwHZweP5iyFIwTXG/o6S/VTS0Cx3djGuDM2+2X<br>
-ybobuKt0tGorMz44fjDWUjwaHQn8zOv4l9CmQR9l10MkF9UNZl3A7hRstbdxCyb/<br>
-3n5leTEScbDGyiJ7U3ycieDQjhA2ialO368UbhhEYL7pVj0077ehkazpAMYE2kKd<br>
-NfNOa75J2soHGgUPAHRG<br>
-=qwxr<br>
------END PGP PUBLIC KEY BLOCK-----</p></div>
+<div class="content">
+  <div class="post">
+    <h1>About</h1><hr>
+    <p>
+
+      <br>
+      I'm Grant Foudree - a Computer Engineering student at Iowa State University.<br><br>
+      My technical interests include:<br>
+      <ul>
+        <li>Computer security (Network, OS &amp; Kernel)</li>
+        <li>Programming (C/C++, x86_64 ASM, Python, Ruby)</li>
+        <li>Reverse engineering</li>
+        <li>Embedded systems</li>
+        <li>Low-level computer architecture</li>
+        <li>Linux &amp; BSD (OpenBSD)</li>
+        <li>Cryptography</li>
+      </ul>
+    </p>
+    <p>
+      Github: <a class="hyperlink" href="&#104;&#116;&#116;&#112;&#115;://&#103;&#105;&#116;&#104;&#117;&#098;&#046;&#099;&#111;&#109;/&#103;&#102;&#111;&#117;&#100;&#114;&#101;&#101;">&#104;&#116;&#116;&#112;&#115;://&#103;&#105;&#116;&#104;&#117;&#098;&#046;&#099;&#111;&#109;/&#103;&#102;&#111;&#117;&#100;&#114;&#101;&#101;</a><br>
+      Email: &#103;&#102;&#111;&#117;&#100;&#114;&#101;&#101;&#064;&#105;&#097;&#115;&#116;&#097;&#116;&#101;&#046;&#101;&#100;&#117;<br>
+      PGP ID: 4096R/D0944081
+    </p>
+    <br>
+    <br>
+    <br>
+  </div>
+
+</div>
 {% include 'footer.html' %}
