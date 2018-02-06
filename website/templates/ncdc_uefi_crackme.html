@@ -1,0 +1,70 @@
+{% load staticfiles %}
+<p>
+UEFI is the successor to the legacy and well-known BIOS. Like its predecessor, UEFI is used to perform the initial tasks a computer must take
+when the power is turned on such as initializing disks, configuring memory, and starting the bootstrap process. In addition to initializing hardware,
+UEFI can be used to do much more and, unlike BIOS, exposes a friendly C interface to do so as we will see below.
+</p>
+<center>
+  <img src="{% static 'uefi.svg' %}" style="width: 23%"></img>
+</center><br>
+
+<p>
+  Diving right in, let's have a look at an example "hello world" program<br>
+  <pre><code class="c" style="font-size: 13px">
+    #include &ltefi.h&gt
+    #include &ltefilib.h&gt
+
+    EFI_STATUS EFIAPI efi_main (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+      InitializeLib(ImageHandle, SystemTable);
+      Print(L"Hello, world!\n");
+      return EFI_SUCCESS;
+    }
+  </code></pre>
+</p>
+<p>
+  In order to compile this, I got an example from <a href="https://wiki.osdev.org/UEFI">https://wiki.osdev.org/UEFI</a>. You will also need to install the
+    GNU EFI libraries, as well as download the OVMF firmware
+    (<a href="https://sourceforge.net/projects/edk2/files/OVMF/">https://sourceforge.net/projects/edk2/files/OVMF/</a>)
+      if you want to run your program in QEMU.
+</p>
+<p>
+  <pre><code class="makefile" style="font-size: 13px">
+all:
+    gcc main.c -c -fno-stack-protector -fpic -fshort-wchar -mno-red-zone -DEFI_FUNCTION_WRAPPER -I /usr/include/efi -I /usr/include/efi/x86_64/ -o main.o
+    ld main.o /usr/lib64/gnuefi/crt0-efi-x86_64.o -nostdlib -znocombreloc -T /usr/lib64/gnuefi/elf_x86_64_efi.lds -shared -Bsymbolic -L /usr/lib64 -l:libgnuefi.a -l:libefi.a -o main.so
+    objcopy -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .reloc --target=efi-app-x86_64 main.so main.efi
+
+
+buildimg:
+    dd if=/dev/zero of=uefi.img bs=512 count=100000
+    parted uefi.img -s -a minimal mklabel gpt
+    parted uefi.img -s -a minimal mkpart EFI FAT16 2048s 93716s
+    parted uefi.img -s -a minimal toggle 1 boot
+    dd if=/dev/zero of=/tmp/part.img bs=512 count=91669
+    mformat -i /tmp/part.img -h 32 -t 32 -n 64 -c 1
+    mmd -i /tmp/part.img ::EFI
+    mmd -i /tmp/part.img ::EFI/BOOT
+    mcopy -i /tmp/part.img main.efi ::/EFI/BOOT/BOOTx64.EFI
+    dd if=/tmp/part.img of=uefi.img bs=512 count=91669 seek=2048 conv=notrunc
+    rm /tmp/part.img
+
+run:
+    qemu-system-x86_64 -bios OVMF-pure-efi.fd -cpu qemu64 -drive file=uefi.img,if=ide
+</code></pre>
+</p>
+<p>
+  Just as the BIOS looks to the MBR for code to run on startup, UEFI looks for a <i>/EFI/BOOT/BOOTx64.EFI</i> file on x86_64 computers. Our makefile
+  takes care of setting up an image, partitioning it as FAT16, and putting our program in the correct folder so it runs as a bootable image.
+</p>
+<p>
+  To compile and run, type<pre><code class="makefile" style="font-size: 13px">$ make &amp;&amp; make buildimg &amp;&amp; make run</code></pre>
+<p>
+<p>
+  Success!
+  <center><img src="{% static 'uefi_success.png' %}" style="width: 70%"></img></center>
+</p>
+
+<p>
+  There is much more that can be done with UEFI, and while I enjoy assembly, the C API that UEFI has is quite nice to use for a change.
+  To get a quick idea of the functionality UEFI exposes, you can download an "EFI Shell" program and explore some of the commands.
+</p>
