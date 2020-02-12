@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <link href="{% static 'atelier-seaside-dark.css' %}" rel="stylesheet">
+    <script src="{% static 'highlight.pack.js' %}"></script>
+    <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
+    <meta name="keywords" content="security, cyber, x86, computer">
+    <meta name="author" content="Grant Foudree">
+    <meta name="description" content="Security research website">
+    <link rel="stylesheet" type="text/css" href="{% static 'main.css' %}">
+    <script src="{% static 'main.js' %}"></script>
+    <title>x86sec.com</title>
+  </head>
+
+  <body>
+    <div class="header">
+      <center>
+        <img src="{% static 'banner.png' %}" style="max-width: 21%; max-height:21%;"></img>
+        <h1>$0x86sec</h1>
+        <nav>
+          <a href="/">Home</a>
+          <a href="#">Downloads</a>
+          <a href="#">Projects</a>
+          <a href="/about" style="margin-right: 5%">About</a>
+        </nav>
+        <br>
+      </center>
+    </div>

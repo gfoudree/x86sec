@@ -1,0 +1,13 @@
+{% include 'header.html' %}
+<div class="content">
+  {% for post in posts %}
+    <div class="post">
+      <h1>{{ post.title }}</h1>
+      <hr>
+      {% include post.content %}
+    </div>
+    <br>
+    <br>
+  {% endfor %}
+</div>
+{% include 'footer.html' %}
