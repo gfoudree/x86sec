@@ -8,7 +8,7 @@ Recent Iowa State, computer engineering graduate. Passionate about cybersecurity
 <br>
 <br>
 <br>
-GPG: [12B1 FC83 9F62 A01E 5E85 77AC 93CD 9900 9EC1 C788](/tale/assets/gfoudree.asc)
+GPG: [12B1 FC83 9F62 A01E 5E85 77AC 93CD 9900 9EC1 C788](/assets/gfoudree.asc)
 
 Github: [https://github.com/gfoudree](https://github.com/gfoudree)
 
