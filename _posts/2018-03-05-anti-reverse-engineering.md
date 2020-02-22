@@ -30,7 +30,7 @@ exit:
 
 The disassembly of the binary is shown below (objdump)
 
-{% highlight basy %}
+{% highlight bash %}
 0000000000400487 <main>:
   400487:	eb 01                	jmp    40048a <L1+0x1>
 
@@ -70,7 +70,7 @@ nop			//0x90				[This is our target, can be anything]
 
 The disassembly is shown below (objdump)
 
-{% highlight basy %}
+{% highlight bash %}
 0000000000400487 <main>:
   400487:	55                   	push   rbp
   400488:	48 89 e5             	mov    rbp,rsp
