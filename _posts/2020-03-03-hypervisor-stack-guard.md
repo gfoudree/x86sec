@@ -2,6 +2,7 @@
 layout: post
 title: "StackSupervisor - a Hypervisor-based Stack Guard"
 author: "Grant"
+tags: [hypervisor, stack-smashing, buffer overflow, security, kernel, linux]
 ---
 
 Stack-based buffer overflow attacks have been

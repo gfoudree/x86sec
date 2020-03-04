@@ -2,6 +2,7 @@
 layout: post
 title: "Simple ELF Crypter"
 author: "Grant"
+tags: [elf, binary, binary crypter, malware, elf crypter]
 ---
 
 There are several techniques that can be used to obsfucate what an executable does at runtime. This post will demonstrate a minimal example of a self-modifying, ELF executable that contains an encrypted section of code that, at runtime, bruteforces its own key and decrypts itself.

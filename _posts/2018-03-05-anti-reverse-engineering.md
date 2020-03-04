@@ -2,6 +2,7 @@
 layout: post
 title: "Anti Reverse Engineering Tricks"
 author: "Grant"
+tags: [reverse engineering, obsfucation]
 ---
 
 ## Jumping Over Opcodes

@@ -2,6 +2,7 @@
 layout: post
 title: "TEG-S18TXE Switch Reverse Engineering"
 author: "Grant"
+tags: [eeprom, reverse engineering, Trendnet, TEG-S18TXE, network switch, Arduino]
 ---
 
 I happened to have an old [Trendnet TEG-S18TXE switch](https://www.trendnet.com/products/proddetail?prod=185_TEG-S18TXE)
