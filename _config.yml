@@ -1,6 +1,6 @@
 # Site settings
 title:          x86Sec
-description:    "Personal Blog"
+description:    "A security blog focusing on low-level concepts such as operating systems, reverse engineering, and binary exploitation."
 baseurl:        ""
 url:            "https://x86sec.com"
 
