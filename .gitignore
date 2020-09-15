@@ -1,4 +1,5 @@
 *.pyc
+*.swp
 .sass-cache
 _site
 __pycache__
