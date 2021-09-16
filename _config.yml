@@ -4,9 +4,6 @@ description:    "A security blog focusing on low-level concepts such as operatin
 baseurl:        ""
 url:            "https://x86sec.com"
 
-# Google Analytics
-google_analytics: UA—XXXXXXXX-X
-
 # Author
 author:
   name:         Grant Foudree

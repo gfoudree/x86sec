@@ -4,7 +4,7 @@ title: "About"
 permalink: /about/
 ---
 
-Recent Iowa State, computer engineering graduate. Passionate about cybersecurity, software development, and Linux/BSD.
+Iowa State, computer engineering graduate (BS/MSc). Passionate about cybersecurity, software development, and Linux/BSD. San Francisco/Bay Area. Part-time EMT to help my community and keep life interesting.
 <br>
 <br>
 <br>

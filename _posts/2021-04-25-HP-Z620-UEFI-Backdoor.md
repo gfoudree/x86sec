@@ -5,7 +5,7 @@ author: "Grant"
 tags: [z620, reverse engineering, uefi, backdoor, malware, persistent, ghidra, efi]
 ---
 
-As luck would have it, I ended up stuck at home for the weekend waiting for a part to change the brake pads on my car. Naturally, I decided to do what normal people do in this situation: reverse engineer the UEFI firmware on their desktop computer.
+Picking apart firmware is quite interesting to me and so I thought it would be fun to reverse engineer my desktop's BIOS and see what I could find.
 
 # Extracting UEFI Modules
 
