@@ -1,0 +1,7 @@
+I"@<h2 id="jumping-over-opcodes">Jumping Over Opcodes</h2>
+<hr />
+
+<p><br />
+It is not uncommon for malware to attempt to obfuscate its behavior in various ways to avoid analysis. In this post we will go over
+some common tricks used to confuse static analysis tools from obtaining the correct disassembly of a program.</p>
+:ET

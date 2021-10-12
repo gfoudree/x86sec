@@ -1,0 +1,6 @@
+I"	<p>I happened to have an old <a href="https://www.trendnet.com/products/proddetail?prod=185_TEG-S18TXE">Trendnet TEG-S18TXE switch</a>
+  laying around the lab at work, so I decided to open it up and see if there was
+  anything interesting inside. Usually, “dumb” switches do not contain many interesting hackable components
+  as they are rather simplistic devices, however I got lucky and spotted an EEPROM chip on the board. If you look closely,
+  you might notice that it is an Atmel AT93C46, 1K serial EEPROM.</p>
+:ET

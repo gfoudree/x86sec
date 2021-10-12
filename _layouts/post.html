@@ -1,39 +1,44 @@
----
-layout: default
----
+<!DOCTYPE html>
+<html lang="en">
+  {% include head.html %}
+  <body>
+    <div id="indicator"></div>
+    <div id="page">
+      <style>
+        .title {
+          padding: 10%;
+          color: #101417;
+          font-size: 18px;
+          font-weight: bold;
+          text-align: center;
+          background: #f78e66;
+          display: grid;
+        }
+        .meta {
+          font-size: 0.7rem;
+          font-weight: normal;
+          text-transform: uppercase;
+        }
+      </style>
+      <!-- header -->
+      {% include header.html %}
+      <!-- nav -->
+      {% include nav.html %}
+      <!-- page content -->
+      <main class="content">
+        <p class="title">
+          {{page.title}}
+          
+          <span class="meta">
+            <br>
+            {{ page.date | date: '%B %d, %Y' }}
+          </span> 
+        </p>
+        {{content}}
+      </main>
 
-<div class="post">
-  <div class="post-info">
-    <!--
-    {% if page.author %}
-    <span>Written by</span>
-        {{ page.author }}
-    {% endif %}
-    -->
-
-    {% if page.date %}
-      
-      <span></span><time datetime="{{ page.date }}">{{ page.date | date: "%B %d, %Y" }}</time>
-    {% endif %}
-  </div>
-
-  <h1 class="post-title">{{ page.title }}</h1>
-  <div class="post-line"></div>
-
-  {{ content }}
-</div>
-
-{% if page.comments %}
-  {% include disqus_comments.html %}
-{% endif %}
-
-<div class="pagination">
-  {% if page.next.url %}
-    <a href="{{ page.next.url | prepend: site.baseurl }}" class="left arrow">&#8592;</a>
-  {% endif %}
-  {% if page.previous.url %}
-    <a href="{{ page.previous.url | prepend: site.baseurl }}" class="right arrow">&#8594;</a>
-  {% endif %}
-
-  <a href="#" class="top">Top</a>
-</div>
+      <!-- footer -->
+      {% include footer.html %}
+    </div>
+  </body>
+</html>

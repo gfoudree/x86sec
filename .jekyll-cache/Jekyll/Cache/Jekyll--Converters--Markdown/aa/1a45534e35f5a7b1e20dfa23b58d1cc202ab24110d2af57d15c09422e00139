@@ -1,0 +1,160 @@
+I"ü.<p><a href="https://github.com/AFLplusplus/AFLplusplus">AFL++</a> is an improved version of AFL, a popular and successful fuzzer. In this article we will use it to discover a couple heap-overflow bugs in GNU Barcode 0.99.</p>
+
+<h1 id="afl">AFL++</h1>
+<hr />
+
+<p><br /></p>
+<h2 id="compiling">Compiling</h2>
+<p>It is quite simple to use AFL++, especially if you have access to the source code of the program you are trying to fuzz.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install some deps on Ubuntu</span>
+apt <span class="nb">install </span>git clang make build-essential gcc-9-plugin-dev
+
+git clone https://github.com/AFLplusplus/AFLplusplus.git
+<span class="nb">cd </span>AFLplusplus
+
+<span class="c"># Set LLVM_CONFIG to point to your llvm-config binary</span>
+<span class="nv">LLVM_CONFIG</span><span class="o">=</span>llvm-config-10 make <span class="nt">-j</span>
+
+</code></pre></div></div>
+<p><br /></p>
+<h2 id="building-a-target">Building a Target</h2>
+
+<p>AFL++ makes it rather easy here - all you have to do is replace <code class="highlighter-rouge">CC</code>/<code class="highlighter-rouge">CXX</code> with the <code class="highlighter-rouge">afl-clang-fast</code>/<code class="highlighter-rouge">afl-clang-fast++</code> file in your AFL++ build folder and it handles the rest.</p>
+
+<p>For example with GNU Barcode 0.99:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget <span class="nt">-qO</span> - https://mirrors.sarata.com/gnu/barcode/barcode-0.99.tar.gz | <span class="nb">tar </span>vxz
+<span class="nb">cd </span>barcode-0.99
+
+<span class="nv">CC</span><span class="o">=</span>../AFLplusplus/afl-cc ./configure
+make <span class="nt">-j</span>
+
+</code></pre></div></div>
+
+<p><br /></p>
+
+<h2 id="fuzzing-with-afl">Fuzzing With AFL++</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">mkdir</span> /tmp/<span class="o">{</span><span class="k">in</span>,out<span class="o">}</span>
+
+<span class="c"># Our example input, modify accordingly</span>
+<span class="c"># (ex: PNG parser -&gt; copy .png here). Can have multiple files</span>
+<span class="nb">echo </span>hello <span class="o">&gt;</span> /tmp/in/1
+
+<span class="c"># Run fuzzer</span>
+AFLplusplus/afl-fuzz <span class="nt">-i</span> /tmp/in/ <span class="nt">-o</span> /tmp/out/ <span class="nt">--</span> barcode-0.99/barcode
+</code></pre></div></div>
+<asciinema-player src="/assets/asciinema_casts/barcode_heapoverflow_afl.cast" cols="110" rows="35"></asciinema-player>
+
+<p>Crash-causing inputs will be found in the <code class="highlighter-rouge">/tmp/out/default/crashes</code> folder where you can try and reproduce the bug.
+<br />
+<br /></p>
+<h1 id="heap-overflows">Heap Overflows</h1>
+<hr />
+
+<p><br /></p>
+<h2 id="overflow-1">Overflow 1</h2>
+
+<p>The first overflow I found occured when GNU Barcode tried to parse the following input:</p>
+
+<p><a href="/assets/gnubarcode_heapoverflow1_poc.bin"><code class="highlighter-rouge">heapoverflow1</code></a></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gfoudree@z620 /tmp/poc % xxd &lt; heapoverflow1
+00000000: 3109 8000 0a20 3f39 0010 3952 0a47 6847  1.... ?9..9R.GhG
+00000010: 6cff 262b 0a                             l.&amp;+.
+</code></pre></div></div>
+
+<p>Compiling GNU Barcode with ASAN helps give a hint as to what is going on when the crash occurs.</p>
+
+<p><img src="/assets/gnu_barcode_heapoverflow1_asan.png" alt="heapoverflow1" title="Clang ASAN Output" /></p>
+
+<p>Examining this further in GDB, it appears as if the following snippet in <code class="highlighter-rouge">code128.c:443</code> is responsible for the crash here.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="n">partial</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">len</span> <span class="o">+</span> <span class="mi">4</span><span class="p">);</span> <span class="c1">// 40 bytes allocated</span>
+
+<span class="c1">//...</span>
+
+<span class="c1">// Far more than 40 bytes are copied into the heap-allocated buffer</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> 
+	<span class="n">strcat</span><span class="p">(</span><span class="n">partial</span><span class="p">,</span> <span class="n">codeset</span><span class="p">[</span><span class="n">codes</span><span class="p">[</span><span class="n">i</span><span class="p">]]);</span>
+</code></pre></div></div>
+
+<p>Running the program in GDB while checking the ability to <code class="highlighter-rouge">free()</code> the buffer <code class="highlighter-rouge">partial</code> inside of the for loop succeeds several times until it is overflowed and the following output can be seen from PwnDBG:
+`</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pwndbg&gt; try_free partial
+General checks
+Tcache checks
+Using tcache_put
+Fastbin checks
+free<span class="o">()</span>: invalid next size <span class="o">(</span>fast<span class="o">)</span> -&gt; next chunk<span class="s1">'s size not in [2*size_sz; av-&gt;system_mem]
+    next chunk'</span>s size is 0x3131323234, 2<span class="k">*</span>size_sz is 0x10, system_mem is 0x21000
+<span class="nt">----------</span>
+Free should succeed!
+</code></pre></div></div>
+
+<p>The full debugging session demo is shown below.</p>
+
+<asciinema-player src="/assets/asciinema_casts/barcode_heapoverflow_1.cast" cols="120" rows="50"></asciinema-player>
+<p><br />
+<br /></p>
+
+<h2 id="overflow-2">Overflow 2</h2>
+
+<p>The second one occurs with the following input:</p>
+
+<p><a href="/assets/gnubarcode_heapoverflow2_poc.bin"><code class="highlighter-rouge">heapoverflow2</code></a></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>gfoudree@z620 /tmp/poc % xxd &lt; heapoverflow2 
+00000000: 3109 3100 1000 0039 0010 3944 0a47 6865  1.1....9..9D.Ghe
+00000010: 6c80 262b 0a                             l.&amp;+.
+</code></pre></div></div>
+
+<p>Here, ASAN gives us an even better hint that a heap overflow is occuring:</p>
+
+<p><img src="/assets/gnu_barcode_heapoverflow2_asan.png" alt="heapoverflow2" title="Clang ASAN Output" /></p>
+
+<p>Digging through the source code and running the target in GDB, the source appears to be a different location inside of <code class="highlighter-rouge">code128.c:557</code>.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Buffer allocated</span>
+<span class="n">textinfo</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">12</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">strlen</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">);</span>
+    
+<span class="p">...</span>
+
+<span class="n">textptr</span> <span class="o">=</span> <span class="n">textinfo</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">strlen</span><span class="p">(</span><span class="n">text</span><span class="p">);</span> <span class="n">count</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sscanf</span><span class="p">(</span><span class="n">text</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="s">"%u%n"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">code</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">n</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">bc</span><span class="o">-&gt;</span><span class="n">error</span> <span class="o">=</span> <span class="n">EINVAL</span><span class="p">;</span> 
+            <span class="n">free</span><span class="p">(</span><span class="n">partial</span><span class="p">);</span>
+            <span class="n">free</span><span class="p">(</span><span class="n">textinfo</span><span class="p">);</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">strcat</span><span class="p">(</span><span class="n">partial</span><span class="p">,</span> <span class="n">codeset</span><span class="p">[</span><span class="n">code</span><span class="p">]);</span>
+        
+    <span class="c1">// ...</span>
+
+    <span class="c1">// Overflow occurs here! </span>
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">textptr</span><span class="p">,</span> <span class="s">"%g:9:%c %g:9:%c "</span><span class="p">,</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="n">textpos</span><span class="p">,</span> 
+    <span class="n">code</span> <span class="o">&gt;=</span> <span class="mi">100</span> <span class="o">?</span> <span class="sc">'A'</span> <span class="o">:</span> <span class="n">code</span><span class="o">/</span><span class="mi">10</span> <span class="o">+</span> <span class="sc">'0'</span><span class="p">,</span>
+    <span class="n">textpos</span> <span class="o">+</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="n">SYMBOL_WID</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>	<span class="n">code</span><span class="o">%</span><span class="mi">10</span> <span class="o">+</span> <span class="sc">'0'</span><span class="p">);</span>
+    <span class="n">textptr</span> <span class="o">+=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">textptr</span><span class="p">);</span>
+    <span class="n">textpos</span> <span class="o">+=</span> <span class="n">SYMBOL_WID</span><span class="p">;</span> <span class="cm">/* width of each code */</span>
+    <span class="n">i</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The loop above continues to copy into the heap-allocated buffer without checking any sort of boundaries, eventually overflowing it.</p>
+
+<p><br />
+<br /></p>
+
+<h1 id="fixes--conclusion">Fixes &amp; Conclusion</h1>
+<hr />
+
+<p><br />
+Over 90 crashing inputs were found after fuzzing GNU Barcode 0.99 for an hour. Of the 2 analyzed above, both are caused by an out-of-bounds write corrupting the heap which causes the subsequent <code class="highlighter-rouge">free()</code> in the program to operate on a smashed heap causing a crash.</p>
+
+<p>In both instances, a safer function could have been used (<code class="highlighter-rouge">sprintf</code> -&gt; <code class="highlighter-rouge">snprintf</code> and <code class="highlighter-rouge">strcpy</code> -&gt; <code class="highlighter-rouge">strncpy</code>) which would only copy within the specified bounds and prevented both of these vulnerabilities.</p>
+:ET

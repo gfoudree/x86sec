@@ -1,38 +1,40 @@
-# Site settings
-title:          x86Sec
-description:    "A security blog focusing on low-level concepts such as operating systems, reverse engineering, and binary exploitation."
-baseurl:        ""
-url:            "https://x86sec.com"
+title: x86Sec
+markdown: kramdown
+url: "https://x86sec.com"
+baseurl: ""
+description: "A security blog focusing on low-level concepts such as operating systems, reverse engineering, and binary exploitation."
 
-# Author
+plugins:
+  - jekyll-paginate
+  - jemoji
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
 author:
   name:         Grant Foudree
   url:          https://x86sec.com
   email:        gfoudree@protonmail.com
 
-# Build settings
-markdown:       kramdown
-include:
-  - _pages
+paginate_path: "/page:num/"
 
-# Assets
-sass:
-  sass_dir:     _sass
-  style:        compressed
+paginate: 5
 
-# Gems
-plugins:
-  - jekyll-feed
-  - jekyll-paginate
-  - jekyll-seo-tag
-  # - jemoji #Uncomment this to allow emoji in your post
+collections_dir: all_collections
+collections:
+  posts:
+    output: true
+  projects:
+    output: true
 
-# Permalinks
-permalink:      /:year-:month-:day/:title
-paginate:       5
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "post"
+  - scope:
+      path: "_posts"
+    values:
+      layout: "post"
+      permalink: /posts/:categories/:year/:month/:day/:title/
 
-# Excludes
-exclude: [ Gemfile, Gemfile.lock, tale.gemspec ]
-
-# Disqus (Set to your disqus id)
-disqus:         jekyll-tale
+exclude: ["sitemap.xml", "feed.xml", "LICENSE", "README.md"]

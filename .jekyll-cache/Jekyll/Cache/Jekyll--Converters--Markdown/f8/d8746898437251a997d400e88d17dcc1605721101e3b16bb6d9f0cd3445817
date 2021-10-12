@@ -1,0 +1,2 @@
+I"â<p><a href="https://github.com/AFLplusplus/AFLplusplus">AFL++</a> is an improved version of AFL, a popular and successful fuzzer. In this article we will use it to discover a couple heap-overflow bugs in GNU Barcode 0.99.</p>
+:ET

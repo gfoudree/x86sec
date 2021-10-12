@@ -1,0 +1,108 @@
+I"�<p>I enjoy working on operating system kernels and hypervisors, and for a lot of my personal work I use <a href="https://www.qemu.org/">QEMU</a> to help with my development and debugging. Here I’ll demonstrate an advanced debugging feature in QEMU I’ve found quite useful called “trace events”.</p>
+
+<p>QEMU has a list of supported “trace events” to get more insight into the running guest OS. You can specify multiple trace commands
+by adding <code class="highlighter-rouge">-d trace:&lt;name&gt;</code> to the QEMU command line. For example, tracing PCI configuration reads can be done with <code class="highlighter-rouge">qemu-system-x86_64 -d trace:pci_cfg_read</code>.</p>
+
+<p>The full list of trace events can be found <a href="https://lxr.missinglinkelectronics.com/qemu+v2.5.1/trace-events">here</a>.</p>
+
+<h1 id="keyboard">Keyboard</h1>
+
+<hr />
+
+<p><br /></p>
+
+<p>When developing a keyboard driver, QEMU’s ps2 keycode trace event is helpful to dump the keycodes out as they are pressed. The log formatting is <code class="highlighter-rouge">ps2_put_keycode(void *opaque, int keycode) "%p keycode %d"</code> <a href="https://lxr.missinglinkelectronics.com/qemu+v2.5.1/trace-events#L233">(source)</a> and the trace flag is <code class="highlighter-rouge">ps2_put_keycode</code>.</p>
+
+<p>Pressing <code class="highlighter-rouge">g</code> on the keyboard inside the guest OS generates the following trace:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ps2_put_keycode 0x55e759f09cf0 keycode 0x34
+ps2_put_keycode 0x55e759f09cf0 keycode 0xf0
+ps2_put_keycode 0x55e759f09cf0 keycode 0x34
+</code></pre></div></div>
+
+<p>Neat!</p>
+<h1 id="pci-device-readwrites">PCI Device Read/Writes</h1>
+
+<hr />
+
+<p><br /></p>
+
+<p>Additionally, QEMU allows you to debug some activity on the PCI bus, such as reading configuration information, with the <code class="highlighter-rouge">pci_cfg_read</code> trace flag. I used this to test
+<a href="https://github.com/gfoudree/cryptos/blob/b90dd6832accc438a0d71aa4e954e50fcf507f13/src/pci.c#L7">my OS code</a> for enumerating devices on the PCI bus which works by walking the bus/device/function combinations and issuing x86 port commands.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define PCI_CONFIG_ADDR_PORT 0xCF8
+#define PCI_CONFIG_DATA_PORT 0xCFC
+</span><span class="kt">uint32_t</span> <span class="nf">pci_read_config_word</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">bus</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="n">device</span><span class="p">,</span> 
+    <span class="kt">uint8_t</span> <span class="n">function</span><span class="p">,</span> <span class="kt">uint8_t</span> <span class="n">reg</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="kt">uint32_t</span> <span class="n">addr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint32_t</span><span class="p">)</span><span class="mh">0x80000000</span> <span class="o">|</span> <span class="p">(</span><span class="kt">uint32_t</span><span class="p">)(</span><span class="n">bus</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> 
+    <span class="o">|</span> <span class="p">(</span><span class="n">device</span> <span class="o">&lt;&lt;</span> <span class="mi">11</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">function</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">reg</span><span class="p">;</span>
+
+    <span class="c1">// Use port I/O to get PCI info</span>
+    <span class="n">outl</span><span class="p">(</span><span class="n">PCI_CONFIG_ADDR_PORT</span><span class="p">,</span> <span class="n">addr</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">inl</span><span class="p">(</span><span class="n">PCI_CONFIG_DATA_PORT</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>My OS enumerates the virtual PCI devices QEMU provides to the guest as shown below.</p>
+
+<p><img src="/assets/cryptos_pci_devs.png" alt="Placeholder image" title="Placeholder image" /></p>
+
+<p>Looking back at the QEMU terminal, we can see it has detected PCI configuration reads as we expected and it matches what our OS reports!
+The string formatting is as follows <code class="highlighter-rouge">pci_cfg_read(const char *dev, unsigned devid, unsigned fnid, unsigned offs, unsigned val) "%s %02u:%u @0x%x -&gt; 0x%x"</code> <a href="https://lxr.missinglinkelectronics.com/qemu+v2.5.1/trace-events#L1615">(source)</a>.</p>
+
+<pre><code class="language-bash=">pci_cfg_read i440FX 00:0 @0x0 -&gt; 0x12378086
+pci_cfg_read i440FX 00:0 @0x0 -&gt; 0x12378086
+pci_cfg_read i440FX 00:0 @0x8 -&gt; 0x6000002
+pci_cfg_read i440FX 00:0 @0x3c -&gt; 0x0
+pci_cfg_read PIIX3 01:0 @0x0 -&gt; 0x70008086
+pci_cfg_read PIIX3 01:0 @0x0 -&gt; 0x70008086
+pci_cfg_read PIIX3 01:0 @0x8 -&gt; 0x6010000
+pci_cfg_read PIIX3 01:0 @0x3c -&gt; 0x0
+pci_cfg_read piix3-ide 01:1 @0x0 -&gt; 0x70108086
+pci_cfg_read piix3-ide 01:1 @0x0 -&gt; 0x70108086
+pci_cfg_read piix3-ide 01:1 @0x8 -&gt; 0x1018000
+pci_cfg_read piix3-ide 01:1 @0x3c -&gt; 0x0
+pci_cfg_read PIIX4_PM 01:3 @0x0 -&gt; 0x71138086
+pci_cfg_read PIIX4_PM 01:3 @0x0 -&gt; 0x71138086
+pci_cfg_read PIIX4_PM 01:3 @0x8 -&gt; 0x6800003
+pci_cfg_read PIIX4_PM 01:3 @0x3c -&gt; 0x109
+pci_cfg_read VGA 02:0 @0x0 -&gt; 0x11111234
+pci_cfg_read VGA 02:0 @0x0 -&gt; 0x11111234
+pci_cfg_read VGA 02:0 @0x8 -&gt; 0x3000002
+pci_cfg_read VGA 02:0 @0x3c -&gt; 0x0
+pci_cfg_read e1000 03:0 @0x0 -&gt; 0x100e8086
+pci_cfg_read e1000 03:0 @0x0 -&gt; 0x100e8086
+pci_cfg_read e1000 03:0 @0x8 -&gt; 0x2000003
+pci_cfg_read e1000 03:0 @0x3c -&gt; 0x10b
+</code></pre>
+
+<p>You can also test this using the <code class="highlighter-rouge">lspci</code> utility from a guest Linux VM running under QEMU.</p>
+
+<h1 id="dma-block-io">DMA Block I/O</h1>
+
+<hr />
+
+<p><br /></p>
+
+<p>Finally, you can debug some DMA operations with the <code class="highlighter-rouge">dma_blk_io</code> trace flag. To see this in action, we can perform a disk read
+which uses DMA.</p>
+
+<p>The formatting is as follows:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">dma_blk_io</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">dbs</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">bs</span><span class="p">,</span> <span class="kt">int64_t</span> <span class="n">sector_num</span><span class="p">,</span> <span class="n">bool</span> <span class="n">to_dev</span><span class="p">)</span> <span class="s">"dbs=%p bs=%p sector_num=%"</span> <span class="n">PRId64</span> <span class="s">" to_dev=%d"</span>
+</code></pre></div></div>
+
+<p>To trigger something predictable, we will run a <code class="highlighter-rouge">dd</code> of a 128 byte block (<code class="highlighter-rouge">dd if=/dev/sdb of=out bs=128 count=1</code>) at offset 0 and 16384.
+When the first <code class="highlighter-rouge">dd</code> is run, you can see the result on line 3 (offset is 0). The second <code class="highlighter-rouge">dd</code> run corresponds to line 4.</p>
+
+<pre><code class="language-bash=">dma_blk_io dbs=0x7f2364044cb0 bs=0x558d815ec630 offset=1364811776 to_dev=0
+dma_blk_io dbs=0x7f2364048730 bs=0x558d815ec630 offset=1364844544 to_dev=0
+dma_blk_io dbs=0x7f2364048730 bs=0x558d815bce00 offset=0 to_dev=0
+dma_blk_io dbs=0x7f236c218600 bs=0x558d815bce00 offset=16384 to_dev=0
+dma_blk_io dbs=0x7f2370663940 bs=0x558d815ec630 offset=1517211648 to_dev=0
+dma_blk_io dbs=0x7f2370663940 bs=0x558d815ec630 offset=1517215744 to_dev=0
+...
+</code></pre>
+
+<p>There’s obviously a lot of other DMA operations going on and this is likely due to background I/O operations by Ubuntu which is the guest OS in this experiment.</p>
+:ET

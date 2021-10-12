@@ -1,0 +1,176 @@
+I"P<p>There are several techniques that can be used to obsfucate what an executable does at runtime. This post will demonstrate a minimal example of a self-modifying, ELF executable that contains an encrypted section of code that, at runtime, bruteforces its own key and decrypts itself.</p>
+
+<h2 id="elf-sections">ELF Sections</h2>
+<hr />
+
+<p><br />
+ELF executables are comprised of several “sections”. Code that is executed, such as <code class="highlighter-rouge">int main()</code>, is placed inside the <code class="highlighter-rouge">.text</code> section.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;</span> readelf <span class="nt">-S</span> a.out 
+There are 30 section headers, starting at offset 0x29d8:
+
+Section Headers:
+  <span class="o">[</span>Nr] Name              Type             Address           Offset
+       Size              EntSize          Flags  Link  Info  Align
+  <span class="o">[</span> 0]                   NULL             0000000000000000  00000000
+       0000000000000000  0000000000000000           0     0     0
+  <span class="o">[</span> 1] .interp           PROGBITS         0000000000400238  00000238
+       000000000000001c  0000000000000000   A       0     0     1
+  ...
+  <span class="o">[</span>13] .text             PROGBITS         0000000000400490  00000490
+       00000000000002b2  0000000000000000  AX       0     0     16
+</code></pre></div></div>
+
+<p>To make things easier for our encryption tool, we will create a new section called <code class="highlighter-rouge">.elf</code> where we will put the functions and strings we want to protect. In GCC, thankfully this is as simple as tagging a function with the section attribute: <code class="highlighter-rouge">__attribute__((section(".elf")))</code>.</p>
+
+<h2 id="code-layout">Code Layout</h2>
+<hr />
+
+<p><br />
+In our program, we are going to protect the function <code class="highlighter-rouge">main()</code> so we will “sandwich” it with two functions to mark the start and end so we have pointers to the region we will be decrypting at runtime.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#define CRYPT_SECTION ".elf"
+</span>
+<span class="c1">// Align 4k so memprotect works on page aligned data</span>
+<span class="kt">void</span> <span class="nf">section_start</span><span class="p">()</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">section</span><span class="p">(</span><span class="n">CRYPT_SECTION</span><span class="p">)))</span>
+    <span class="n">__attribute__</span><span class="p">((</span><span class="n">aligned</span><span class="p">(</span><span class="mi">4096</span><span class="p">)));</span>
+<span class="c1">// Protected (encrypted) function</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">section</span><span class="p">(</span><span class="n">CRYPT_SECTION</span><span class="p">)));</span>
+<span class="c1">// Mark end</span>
+<span class="kt">void</span> <span class="nf">sentinal</span><span class="p">()</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">section</span><span class="p">(</span><span class="n">CRYPT_SECTION</span><span class="p">)));</span> 
+</code></pre></div></div>
+
+<p>We will define the body of <code class="highlighter-rouge">section_start()</code> as 4 NOPs and compile with <code class="highlighter-rouge">-fomit-frame-pointer</code>. This will help us to bruteforce the key as the decryption routine will attempt to guess the key until the signature of <code class="highlighter-rouge">\x90\x90\x90\x90</code> (4 NOPs) is found, revealing the guess is correct.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">section_start</span><span class="p">()</span> <span class="p">{</span>                                                     
+    <span class="n">__asm__</span> <span class="k">volatile</span><span class="p">(</span><span class="s">"nop</span><span class="se">\n\t</span><span class="s">nop</span><span class="se">\n\t</span><span class="s">nop</span><span class="se">\n\t</span><span class="s">nop</span><span class="se">\n\t</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Our <code class="highlighter-rouge">main()</code> function can contain whatever we want. It is noteworthy to point out that any constant strings placed in here will likely <strong>not</strong> be encrypted unless we use a couple tricks. This is because the compiler will take the read-only string and place it in the <code class="highlighter-rouge">.rodata</code> section of the ELF (not the <code class="highlighter-rouge">.elf</code> section we want so that it is encrypted). To circumvent this, we will hack in a string by dynamically computing it as shown below.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span> <span class="c1">// Encrypted main function</span>
+    <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+    <span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'H'</span><span class="p">;</span> <span class="c1">// Build string</span>
+    <span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'i'</span><span class="p">;</span>
+    <span class="n">buf</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"%s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">// Call exit for clean exit</span>
+<span class="p">}</span>
+
+</code></pre></div></div>
+
+<h2 id="decryption-routine">Decryption Routine</h2>
+<hr />
+
+<p><br />
+When the encrypted program executes, it will need to bruteforce the decryption key so it can decrypt the protected region and jump to it. To accomplish all of this, the protected region needs to have the memory permissions of RWX so we will set it with <code class="highlighter-rouge">mprotect(void *addr, size_t len, int prot)</code>. With few exceptions, process memory regions are set to not allow writing and execution at the same time (W^X) for security reasons. Because of this, we have to call <code class="highlighter-rouge">mprotect</code>. 
+<br />
+<br />
+To calculate the starting address and length of the encrypted region we need to pass to <code class="highlighter-rouge">mprotect</code>, we can do some simple pointer math:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">sentinal</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">section_start</span><span class="p">);</span>
+<span class="n">mprotect</span><span class="p">(</span><span class="o">&amp;</span><span class="n">section_start</span><span class="p">,</span> <span class="n">len</span><span class="p">,</span> <span class="n">PROT_READ</span><span class="o">|</span><span class="n">PROT_WRITE</span><span class="o">|</span><span class="n">PROT_EXEC</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Now that the memory can be modified, let’s iterate over it and attempt to bruteforce the key by checking if our guess decrypts the first 4 bytes of <code class="highlighter-rouge">section_start()</code> to be <code class="highlighter-rouge">\0x90\0x90\0x90\0x90</code>:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Pointer to start of encrypted .elf section &amp; our helper function of NOPs</span>
+<span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">section_start</span><span class="p">;</span>
+<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0xFFFFFFFF</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// Bruteforce 32-bit key</span>
+    <span class="c1">// Check for our 4 NOP opcodes</span>
+    <span class="k">if</span> <span class="p">(((</span><span class="o">*</span><span class="p">(</span><span class="n">ptr</span><span class="p">)</span> <span class="o">^</span> <span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x90</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="o">*</span><span class="p">(</span><span class="n">ptr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">^</span> <span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x90</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+         <span class="p">((</span><span class="o">*</span><span class="p">(</span><span class="n">ptr</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">^</span> <span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x90</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="o">*</span><span class="p">(</span><span class="n">ptr</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="o">^</span> <span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x90</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"Found the key! %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Now that the decryption key is found, we just have to decrypt the region and then jump to it:</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">v</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">ptr</span> <span class="o">+</span> <span class="n">i</span><span class="p">);</span>
+    <span class="o">*</span><span class="p">(</span><span class="n">ptr</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">v</span> <span class="o">^</span> <span class="n">key</span><span class="p">;</span> <span class="c1">// Do decryption</span>
+<span class="p">}</span>
+<span class="n">main</span><span class="p">();</span> <span class="c1">// Call decrypted function!</span>
+</code></pre></div></div>
+
+<h2 id="encrypting-the-elf-file">Encrypting The ELF File</h2>
+<hr />
+
+<p><br />
+Since the content we are encrypting is located in the <code class="highlighter-rouge">.elf</code> section we created above, we need a simple program to locate the section boundries of <code class="highlighter-rouge">.elf</code> and encrypt it.
+<br />
+<br />
+<a href="https://docs.pwntools.com/en/stable/">Pwntools</a> is a great Python library for doing CTFs, pentesting, and shellcoding. We will use their ELF library to make things easier.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">#!/usr/bin/python2
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">def</span> <span class="nf">encryptSection</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+	<span class="n">cryptSection</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">get_section_by_name</span><span class="p">(</span><span class="s">'.elf'</span><span class="p">)</span>
+	<span class="n">baseAddr</span> <span class="o">=</span> <span class="n">cryptSection</span><span class="p">[</span><span class="s">'sh_offset'</span><span class="p">]</span>
+	<span class="n">sz</span> <span class="o">=</span> <span class="n">cryptSection</span><span class="p">[</span><span class="s">'sh_size'</span><span class="p">]</span>
+
+	<span class="k">print</span><span class="p">(</span><span class="s">"Entry point @ 0x{:02X}"</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+	<span class="k">print</span><span class="p">(</span><span class="s">"Crypted Section @ 0x{:02X} - 0x{:02X} Size: {}B"</span><span class="o">.</span><span class="nb">format</span><span class="p">(</span><span class="n">baseAddr</span><span class="p">,</span> <span class="n">baseAddr</span> <span class="o">+</span> <span class="n">sz</span><span class="p">,</span> <span class="n">sz</span><span class="p">))</span>
+
+	<span class="n">secData</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="n">baseAddr</span><span class="p">,</span> <span class="n">sz</span><span class="p">)</span>
+
+        <span class="c1"># Encrypt data with XOR cipher (Key = 0xE3)
+</span>	<span class="n">encryptedData</span> <span class="o">=</span> <span class="p">[</span><span class="nb">chr</span><span class="p">((</span><span class="nb">ord</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">^</span><span class="mh">0xe3</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">secData</span><span class="p">)]</span>
+
+	<span class="k">print</span><span class="p">(</span><span class="n">hexdump</span><span class="p">(</span><span class="n">secData</span><span class="p">))</span>
+	<span class="k">print</span><span class="p">(</span><span class="s">"Encrypted:"</span><span class="p">)</span>
+	<span class="k">print</span><span class="p">(</span><span class="n">hexdump</span><span class="p">(</span><span class="n">encryptedData</span><span class="p">))</span>
+
+	<span class="n">e</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="n">baseAddr</span><span class="p">,</span> <span class="s">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">encryptedData</span><span class="p">))</span>
+
+<span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./a.out"</span><span class="p">)</span>
+<span class="n">encryptSection</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">"encrypted.elf"</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="s">"encrypted.elf"</span><span class="p">,</span> <span class="mi">0777</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Inspecting the the first 5 instructions of the to-be-protected <code class="highlighter-rouge">main()</code> function before encrypting it gives us the following disassembly:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>0x004005c7]&gt; pd 5 @ sym.main
+           0x00401006      4883ec28       sub rsp, 0x28
+           0x0040100a      64488b042528.  mov rax, qword fs:[0x28]
+           0x00401013      4889442418     mov qword <span class="o">[</span>var_10h], rax
+           0x00401018      31c0           xor eax, eax
+           0x0040101a      c6042449       mov byte <span class="o">[</span>rsp], 0x49
+</code></pre></div></div>
+
+<p>Disassembling the same function in the encrypted ELF file gives us:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>0x004005c7]&gt; pd 5 @ sym.main
+           0x00401006      ab             stosd dword <span class="o">[</span>rdi], eax
+           0x00401007      60             invalid
+           0x00401008      0fcb           bswap ebx
+           0x0040100a      87ab68e7c6cb   xchg dword <span class="o">[</span>rbx - 0x34391898], ebp
+           0x00401010      e3e3           jrcxz 0x400ff5
+</code></pre></div></div>
+
+<p>As you can see, the opcodes have changed as expected. The first opcode <code class="highlighter-rouge">0x48</code> XORed with our key <code class="highlighter-rouge">0xe3</code>, gives us the result <code class="highlighter-rouge">0xab</code> we are seeing in the encrypted binary. 
+<br />
+<br />
+By encrypting the region, the opcodes are no longer valid and the disassembler cannot determine what this region of code does. Worse, opcodes will be generated that decode to jump instructions which will result in incorrect control-flow graphs of the code.</p>
+
+<h2 id="testing--code">Testing &amp; Code</h2>
+<hr />
+
+<p><br /></p>
+<h3 id="source-code">Source Code</h3>
+
+<p>Download: <a href="/assets/simple_elf_crypter.tar.gz">simple_elf_crypter.tar.gz</a></p>
+<h3 id="demo-environment">Demo Environment</h3>
+<p>I created a Docker Container where you can play around with the source and compiled code. If you want to see how the decryption works during runtime, launch the docker container and run the <code class="highlighter-rouge">encrypted.elf</code> in GDB.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run <span class="nt">-ti</span> gfoudree/simple-elf-crypter:latest
+</code></pre></div></div>
+
+<p>Then run <code class="highlighter-rouge">make</code> inside the container to build <code class="highlighter-rouge">a.out</code> (the executable before being encrypted) and <code class="highlighter-rouge">encrypted.elf</code> (encrypted executable).</p>
+:ET
