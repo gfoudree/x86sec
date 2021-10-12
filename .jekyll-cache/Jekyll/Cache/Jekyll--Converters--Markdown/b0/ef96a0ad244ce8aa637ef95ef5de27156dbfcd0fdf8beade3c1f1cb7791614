@@ -1,2 +1,0 @@
-I"3<p>I enjoy working on operating system kernels and hypervisors, and for a lot of my personal work I use <a href="https://www.qemu.org/">QEMU</a> to help with my development and debugging. Here I’ll demonstrate an advanced debugging feature in QEMU I’ve found quite useful called “trace events”.</p>
-:ET

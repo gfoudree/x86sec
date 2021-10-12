@@ -1,4 +1,6 @@
 *.pyc
+.jekyll-cache
+.sass-cache
 *.swp
 .sass-cache
 _site

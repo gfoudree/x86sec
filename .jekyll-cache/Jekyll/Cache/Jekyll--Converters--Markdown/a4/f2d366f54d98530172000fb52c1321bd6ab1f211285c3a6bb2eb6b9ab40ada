@@ -1,3 +1,0 @@
-I"œ<p>Stack-based buffer overflow attacks have been
-around for some time and have been a popular technique for exploiting software. As a result, several mitigation techniques have been proposed and implemented, however none solve the problem completely. This post will demonstrate a new way to detect and protect against kernel-based buffer overflow attacks in guest operating systems using the KVM hypervisor.</p>
-:ET
