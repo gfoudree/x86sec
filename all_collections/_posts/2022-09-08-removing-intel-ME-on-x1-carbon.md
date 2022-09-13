@@ -27,7 +27,7 @@ Attach the SOIC clip with the RED cable oriented in the corner of the chip that 
 
 At this point, you should be able to read from the chip. We want to make a backup so we can restore the old BIOS if we break anything (and we will `:)`). If `flashrom` gives you an error, try fiddling with the clip and making sure it is attached properly.
 
-```
+```bash
 └─$ flashrom --programmer ch341a_spi -r backup.bin    
 flashrom v1.2 on Linux 5.4.0-125-generic (x86_64)
 flashrom is free software, get the source code at https://flashrom.org
@@ -45,7 +45,7 @@ Download [me_cleaner](https://github.com/corna/me_cleaner) which we will use to 
 
 There's two main modes you can run `me_cleaner` with - remove as many ME components as possible, or set the HAP bit and ask ME to disable itself. We will start by trying the first option and removing most of the ME code.
 
-```
+```bash
 └─$ python3 me_cleaner.py -S -O cleaned.bin ../../backup.bin                                                                                              
 Full image detected
 Found FPT header at 0x3010
@@ -130,7 +130,7 @@ Done! Good luck!
 
 It looks like it succeeded, great! Now let's flash the modified BIOS firmware back to the BIOS chip.
 
-```
+```bash
 └─$ flashrom --programmer ch341a_spi -w Downloads/me_cleaner/cleaned.bin                                                                                
 flashrom v1.2 on Linux 5.4.0-125-generic (x86_64)
 flashrom is free software, get the source code at https://flashrom.org
@@ -143,7 +143,7 @@ Verifying flash...
 VERIFIED.
 ```
 
-Looks like all succeeded, let's disconnect the clip and power on the laptop... And we get a bunch of musical tones playing and a black screen. Great. It looks like this has removed some component that will not allow the laptop to boot. Restoring the backup firmware works fine and the laptop powers on without issues. Time for plan B...
+Now, let's disconnect the clip and power on the laptop... And we get a bunch of musical tones playing and a black screen. Great. It looks like this has removed some component that will not allow the laptop to boot. Restoring the backup firmware works fine and the laptop powers on without issues. Time for plan B...
 
 
 ## Setting the HAP bit
@@ -152,7 +152,7 @@ There is an undocumented setting (supposedly there for US Govermental agencies t
 
 
 
-```
+```bash
 └─$ python3 me_cleaner.py -s -O cleaned_soft.bin ../../backup.bin
 
 Full image detected
@@ -175,7 +175,7 @@ Flashing this version back to the board works great and the laptop powers right 
 There are several ways we can try and check if the ME has been disabled. [MEI AMT Check](https://github.com/mjg59/mei-amt-check) will tell us if AMT is working (part of the ME) and running it appears like it is disabled. So far so good :)
 
 
-```
+```bash
 └─$ sudo ./mei-amt-check
 Unable to find a Management Engine interface - run sudo modprobe mei_me and retry.
 If you receive the same error, this system does not have AMT
@@ -184,8 +184,8 @@ If you receive the same error, this system does not have AMT
 Next, let's try [Coreboot's tool to check](https://github.com/corna/me_cleaner/wiki/Get-the-status-of-Intel-ME). There's an error at the top (but some forums say to ignore it) and it too reports it can't find the PCI device presented by the ME.
 
 
-```
-└─$ sudo ./intelmetool -d -m                                                                                        1 ⨯
+```bash
+└─$ sudo ./intelmetool -d -m                                                                                        
 Bad news, you have a `Sunrise Point LPC Controller/eSPI Controller` so you have ME hardware on board and you can't control or disable it, continuing...
 
 ME PCI device is hidden
@@ -195,8 +195,8 @@ Can't find ME PCI device
 
 Intel also has a ME version checker tool which also reports an issue talking to the ME.
 
-```
-└─$ sudo ./intel_csme_version_detection_tool --help                                                                                       10 ⨯
+```bash
+└─$ sudo ./intel_csme_version_detection_tool --help                                                                                       
 Intel(R) CSME Version Detection Tool
 Copyright(C) 2017-2022, Intel Corporation, All rights reserved.
 

@@ -5,6 +5,9 @@ author: "Grant"
 tags: [eeprom, reverse engineering, Trendnet, TEG-S18TXE, network switch, Arduino]
 ---
 
+# TEG-S18TXE Switch
+<hr>
+
 I happened to have an old [Trendnet TEG-S18TXE switch](https://www.trendnet.com/products/proddetail?prod=185_TEG-S18TXE)
   laying around the lab at work, so I decided to open it up and see if there was
   anything interesting inside. Usually, "dumb" switches do not contain many interesting hackable components

@@ -5,11 +5,12 @@ author: "Grant"
 tags: [elf, binary, binary crypter, malware, elf crypter]
 ---
 
+# ELF Files
+<hr>
 There are several techniques that can be used to obsfucate what an executable does at runtime. This post will demonstrate a minimal example of a self-modifying, ELF executable that contains an encrypted section of code that, at runtime, bruteforces its own key and decrypts itself.
 
 ## ELF Sections
-<hr>
-<br>
+
 ELF executables are comprised of several "sections". Code that is executed, such as `int main()`, is placed inside the `.text` section.
 ```bash
 > readelf -S a.out 
@@ -30,8 +31,7 @@ Section Headers:
 To make things easier for our encryption tool, we will create a new section called `.elf` where we will put the functions and strings we want to protect. In GCC, thankfully this is as simple as tagging a function with the section attribute: `__attribute__((section(".elf")))`.
 
 ## Code Layout
-<hr>
-<br>
+
 In our program, we are going to protect the function `main()` so we will "sandwich" it with two functions to mark the start and end so we have pointers to the region we will be decrypting at runtime.
 
 ```c
@@ -69,8 +69,7 @@ int main() { // Encrypted main function
 ```
 
 ## Decryption Routine
-<hr>
-<br>
+
 When the encrypted program executes, it will need to bruteforce the decryption key so it can decrypt the protected region and jump to it. To accomplish all of this, the protected region needs to have the memory permissions of RWX so we will set it with `mprotect(void *addr, size_t len, int prot)`. With few exceptions, process memory regions are set to not allow writing and execution at the same time (W^X) for security reasons. Because of this, we have to call `mprotect`. 
 <br>
 <br>
@@ -109,8 +108,7 @@ main(); // Call decrypted function!
 ```
 
 ## Encrypting The ELF File
-<hr>
-<br>
+
 Since the content we are encrypting is located in the `.elf` section we created above, we need a simple program to locate the section boundries of `.elf` and encrypt it.
 <br>
 <br>
@@ -172,13 +170,14 @@ As you can see, the opcodes have changed as expected. The first opcode `0x48` XO
 <br>
 By encrypting the region, the opcodes are no longer valid and the disassembler cannot determine what this region of code does. Worse, opcodes will be generated that decode to jump instructions which will result in incorrect control-flow graphs of the code.
 
-## Testing & Code
+# Testing & Code
 <hr>
-<br>
-### Source Code
+
+## Source Code
 
 Download: [simple_elf_crypter.tar.gz](/assets/simple_elf_crypter.tar.gz)
-### Demo Environment
+# Demo Environment
+<hr>
 I created a Docker Container where you can play around with the source and compiled code. If you want to see how the decryption works during runtime, launch the docker container and run the `encrypted.elf` in GDB.
 
 ```bash

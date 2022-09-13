@@ -5,6 +5,9 @@ author: "Grant"
 tags: [qemu, debugging, osdev]
 ---
 
+# QEMU
+<hr>
+
 I enjoy working on operating system kernels and hypervisors, and for a lot of my personal work I use [QEMU](https://www.qemu.org/) to help with my development and debugging. Here I'll demonstrate an advanced debugging feature in QEMU I've found quite useful called "trace events".
 
 QEMU has a list of supported "trace events" to get more insight into the running guest OS. You can specify multiple trace commands
@@ -12,10 +15,7 @@ by adding `-d trace:<name>` to the QEMU command line. For example, tracing PCI c
 
 The full list of trace events can be found [here](https://lxr.missinglinkelectronics.com/qemu+v2.5.1/trace-events).
 
-# Keyboard
-
-<hr>
-<br>
+## Keyboard
 
 When developing a keyboard driver, QEMU's ps2 keycode trace event is helpful to dump the keycodes out as they are pressed. The log formatting is `ps2_put_keycode(void *opaque, int keycode) "%p keycode %d"` [(source)](https://lxr.missinglinkelectronics.com/qemu+v2.5.1/trace-events#L233) and the trace flag is `ps2_put_keycode`.
 
@@ -28,10 +28,7 @@ ps2_put_keycode 0x55e759f09cf0 keycode 0x34
 ```
 
 Neat!
-# PCI Device Read/Writes
-
-<hr>
-<br>
+## PCI Device Read/Writes
 
 Additionally, QEMU allows you to debug some activity on the PCI bus, such as reading configuration information, with the `pci_cfg_read` trace flag. I used this to test
 [my OS code](https://github.com/gfoudree/cryptos/blob/b90dd6832accc438a0d71aa4e954e50fcf507f13/src/pci.c#L7) for enumerating devices on the PCI bus which works by walking the bus/device/function combinations and issuing x86 port commands.
@@ -88,10 +85,7 @@ pci_cfg_read e1000 03:0 @0x3c -> 0x10b
 
 You can also test this using the `lspci` utility from a guest Linux VM running under QEMU.
 
-# DMA Block I/O
-
-<hr>
-<br>
+## DMA Block I/O
 
 Finally, you can debug some DMA operations with the `dma_blk_io` trace flag. To see this in action, we can perform a disk read
 which uses DMA.

@@ -5,11 +5,12 @@ author: "Grant"
 tags: [afl, afl++, fuzzing, gnu barcode, heap overflow, vulnerability, gdb]
 ---
 
-[AFL++](https://github.com/AFLplusplus/AFLplusplus) is an improved version of AFL, a popular and successful fuzzer. In this article we will use it to discover a couple heap-overflow bugs in GNU Barcode 0.99.
 
 # AFL++
 <hr>
-<br>
+
+[AFL++](https://github.com/AFLplusplus/AFLplusplus) is an improved version of AFL, a popular and successful fuzzer. In this article we will use it to discover a couple heap-overflow bugs in GNU Barcode 0.99.
+
 ## Compiling
 It is quite simple to use AFL++, especially if you have access to the source code of the program you are trying to fuzz.
 
@@ -24,7 +25,7 @@ cd AFLplusplus
 LLVM_CONFIG=llvm-config-10 make -j
 
 ```
-<br>
+
 ## Building a Target
 
 AFL++ makes it rather easy here - all you have to do is replace `CC`/`CXX` with the `afl-clang-fast`/`afl-clang-fast++` file in your AFL++ build folder and it handles the rest.
@@ -39,8 +40,6 @@ CC=../AFLplusplus/afl-cc ./configure
 make -j
 
 ```
-
-<br>
 
 ## Fuzzing With AFL++
 
@@ -60,8 +59,7 @@ Crash-causing inputs will be found in the `/tmp/out/default/crashes` folder wher
 <br>
 <br>
 # Heap Overflows
-<hr>
-<br>
+
 ## Overflow 1
 
 
@@ -111,11 +109,8 @@ The full debugging session demo is shown below.
 
 <asciinema-player src="/assets/asciinema_casts/barcode_heapoverflow_1.cast" cols="120" rows="50"></asciinema-player>
 <br>
-<br>
-
 
 ## Overflow 2
-
 
 The second one occurs with the following input:
 
@@ -167,13 +162,8 @@ for (i=0, count = 0; i < strlen(text); count++) {
 
 The loop above continues to copy into the heap-allocated buffer without checking any sort of boundaries, eventually overflowing it.
 
-<br>
-<br>
-
-
 # Fixes & Conclusion
-<hr>
-<br>
+
 Over 90 crashing inputs were found after fuzzing GNU Barcode 0.99 for an hour. Of the 2 analyzed above, both are caused by an out-of-bounds write corrupting the heap which causes the subsequent `free()` in the program to operate on a smashed heap causing a crash.
 
 In both instances, a safer function could have been used (`sprintf` -> `snprintf` and `strcpy` -> `strncpy`) which would only copy within the specified bounds and prevented both of these vulnerabilities.

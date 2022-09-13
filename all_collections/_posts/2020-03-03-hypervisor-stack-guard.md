@@ -5,14 +5,15 @@ author: "Grant"
 tags: [hypervisor, stack-smashing, buffer overflow, security, kernel, linux]
 ---
 
+# Buffer Overflows
+<hr>
+
 Stack-based buffer overflow attacks have been
 around for some time and have been a popular technique for exploiting software. As a result, several mitigation techniques have been proposed and implemented, however none solve the problem completely. This post will demonstrate a new way to detect and protect against kernel-based buffer overflow attacks in guest operating systems using the KVM hypervisor.
 
-# (Some) Existing Stack Smashing Protections:
-<hr>
-<br>
+## (Some) Existing Stack Smashing Protections
 
-## DEP or W^X Memory
+### DEP or W^X Memory
 
 Data execution protection (DEP) and Write XOR Execute Memory
 are the same technique that states that regions of the
@@ -91,7 +92,7 @@ vulnerable program to pass in a command that can be
 executed by `system(3)`.
 -->
 
-## Stack Canaries
+### Stack Canaries
 
 Stack canaries are a popular technique that involves placing a canary value on the stack right before the return
 address. The idea is that if a buffer is overrun, given the
@@ -114,7 +115,7 @@ addition, stack canaries introduce some additional overhead
 in functions due to the checking of the canary value upon
 the function returning. For these reasons, stack canaries are good but not entirely perfect.
 
-## ASLR
+### ASLR
 
 In order to combat the predictable nature of memory addresses in a program, ASLR was introduced. ASLR stands
 for address space layout randomization, and essentially
@@ -137,7 +138,6 @@ as the randomization occurs when a new process is created.
 
 # Hypervisors
 <hr>
-<br>
 
 ## X86 Privilege Rings
 
@@ -255,7 +255,6 @@ average about 400ns on a modern processor.
 
 # Solution
 <hr>
-<br>
 
 In order to create a robust solution to the stack smashing
 problem, we will leverage the higher privilege level
@@ -417,7 +416,6 @@ to kill the process or simply alert on the overflow
 
 # Demo
 <hr>
-<br>
 
 Let's test StackSupervisor with a simple buffer overflow bug in a very simple 32-bit kernel. We will `memcpy()` a large number of 'a's to overrun a buffer and check that StackSupervisor can detect it.
 
@@ -488,7 +486,6 @@ SMM=0 HLT=0
 
 # Limitations
 <hr>
-<br>
 
 While StackSupervisor is effective in protecting stack-based attacks, it does not protect from exploits which corrupt
 local variables, such as function pointers, to gain arbitrary
@@ -500,7 +497,6 @@ which is what StackSupervisor is checking.
 
 # Source Code
 <hr>
-<br>
 
 Complete Code: [https://github.com/gfoudree/HypervisorStackGuard](https://github.com/gfoudree/HypervisorStackGuard)
 

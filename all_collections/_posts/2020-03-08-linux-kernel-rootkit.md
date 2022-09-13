@@ -5,11 +5,12 @@ author: "Grant"
 tags: [hypervisor, stack-smashing, buffer overflow, security, kernel, linux]
 ---
 
+# Rootkits
+<hr>
+
 Rootkits are an advanced form of malware that leverage elevated privileges to hide themselves from the operating system. In this post we will go over how to write a basic rootkit that is capable of hiding files and processes on Linux.
 
 # Listing files in a directory
-<hr>
-<br>
 
 Let's look at a simple C program that can list files in a directory.
 
@@ -49,7 +50,6 @@ that is used to get directory entries on Linux and therefore is what we want to 
 
 # Hooking Syscalls
 <hr>
-<br>
 
 ## Syscall Table
 In Linux, there is an [array in the kernel that contains pointers to all of the syscalls.](https://elixir.bootlin.com/linux/v5.5.7/source/arch/x86/entry/syscall_64.c#L27)
@@ -106,7 +106,6 @@ Combining the steps above, in order to hook a syscall the steps will be roughly 
 
 # Hiding Files
 <hr>
-<br>
 
 As we saw above, the `getdents()` and `getdents64()` syscalls are used to get the the files in a directory, so we will want to hook these to hide files.
 
@@ -153,8 +152,6 @@ asmlinkage int my_getdents(unsigned int fd, struct linux_dirent* dirp,
 
 # Hiding Processes
 <hr>
-<br>
-
 On Linux, process information is stored in the `/proc/{pid}` folder and tools like `ps` read these entries to report on what processes are running. Since we already know how to hide files, all we need to do is hide the file that is the entry inside the `/proc` folder and it will not show up when `ps` is called!
 
 The quickest way to do this is substitute the filename check from above with the PID:
@@ -174,8 +171,6 @@ if (is_prefix(cur->d_name, "5048")) { // Insert your PID here
 However this might hide some other files unintentionally, so it might be wise to check the full path.
 # Demo
 <hr>
-<br>
-
 Try it yourself!
 
 ```bash
