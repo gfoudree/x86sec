@@ -14,16 +14,16 @@ I happened to have an old [Trendnet TEG-S18TXE switch](https://www.trendnet.com/
   as they are rather simplistic devices, however I got lucky and spotted an EEPROM chip on the board. If you look closely,
   you might notice that it is an Atmel AT93C46, 1K serial EEPROM.
 
-![Placeholder image](/assets/board1.png "Placeholder image")
+![Placeholder image](/assets/board1.webp "Placeholder image")
 
 Interestingly, there appear to be unpopulated headers right below the chip that are connected to some of the pins on the EEPROM.
   Instead of soldering on some pins to the headers, I decided to use a SOP16 Clip which allowed me to access the pins on the DIP chip quite nicely.
 
-![Placeholder image](/assets/board2.png "Placeholder image")
+![Placeholder image](/assets/board2.webp "Placeholder image")
 
 Following the datasheet [here](http://www.atmel.com/Images/doc5140.pdf), I grabbed a spare Arduino Pro Micro and hooked up the wires as such:
 
-![Placeholder image](/assets/chip1.png "Placeholder image")
+![Placeholder image](/assets/chip1.webp "Placeholder image")
 
 
 | EEPROM | Arduino       |

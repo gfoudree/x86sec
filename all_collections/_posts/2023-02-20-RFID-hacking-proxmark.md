@@ -237,7 +237,7 @@ Many things are happening above, but essentially the following steps take place:
 5. Reader asks to read block 24 ( `READBLOCK `)
 
 
-![Mifare Read](/assets/mifare_read.png)
+![Mifare Read](/assets/mifare_read.webp)
 
 
 Based on these transactions, it appears as if the reader wants more than just the UID for authenticating the key fob, but also the contents of block 24.
@@ -247,7 +247,7 @@ Based on these transactions, it appears as if the reader wants more than just th
 Above, Proxmark did all the work to crack the key for us, but we can do so manually as well. We need 5 things: UID, NT, NR, AR, and AT, all of which are in the trace above. The table below explains what each byte represents in the sequence. With these, we can use the following script to generate the key:
 
 
-![Mifare Authentication](/assets/mifare_auth.png)
+![Mifare Authentication](/assets/mifare_auth.webp)
 
 
 ```

@@ -44,7 +44,7 @@ OK
 
 Nice! Now we will unlock the ability to write a new IMEI and then set the new IMEI to what we would like it to be. The format is 8 bytes, comma-separated as shown below. We will change one byte `28->29`
 
-![Write IMEI](/assets/write_imei.png)
+![Write IMEI](/assets/write_imei.webp)
 
 ```
 AT!NVIMEIUNLOCK
@@ -141,7 +141,7 @@ QCMAP_Account_Help.html  QCMAP_Help.html           QCMAP_IPV6_Help.html  QCMAP_N
 
 Looking at some of these files, it appears to be some management web UI for the modem to configure IP/FW/WLAN settings. There's also CGI files which seem to run the backend.
 
-![Firmware webui](/assets/firmware_webui.png)
+![Firmware webui](/assets/firmware_webui.webp)
 
 
 ### Web UI Password
@@ -154,11 +154,11 @@ admin:$6$28780376880137ae$sy2ToGy3NjYEPTfOPZT7/IMEr0MN9F6gZbrt6e0881usmBPFGAKy1s
 
 In Ghidra, there is a function at `0x00008c40` which performs this authentication. First, the `/www/lighttpd.user` is opened, then `fseek(6)` is used to skip past the `admin:` portion and to the hash section where `fread(0x6b)` is called to read this.
 
-![Auth](/assets/modem_auth_mechanism.png)
+![Auth](/assets/modem_auth_mechanism.webp)
 
 To perform the hash, the binary uses the `crypt()` function
 
-![hash](/assets/modem_hash_func.png)
+![hash](/assets/modem_hash_func.webp)
 
 Now that we know the hashing algorithm that is being used, we can crack the password. Let's try something obvious with Python - the credentials admin/admin
 

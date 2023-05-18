@@ -102,7 +102,7 @@ address. If we check if the canary has been modified before
 returning from a function, we can infer whether or not a
 buffer has been overrun and the return address modified.
 
-<img src="/assets/stack-canary.png" width="50%"/>
+<img src="/assets/stack-canary.webp" width="50%"/>
 
 Canaries are effective if chosen to be a random value and
 the program itself does not have a vulnerability in which
@@ -161,7 +161,7 @@ of monitoring a guest for intrusions and rootkit behavior such as IDT/SSDT hooki
 
 <br>
 <br>
-<img src="/assets/cpu-rings.png" width="50%" />
+<img src="/assets/cpu-rings.webp" width="50%" />
 
 ## VT-x/AMD-V
 
@@ -251,7 +251,7 @@ exit occurred. One [benchmark at AnandTech](https://www.anandtech.com/show/2480/
 the round-trip time for a VMCALL to VMRESUME can
 average about 400ns on a modern processor.
 
-<img src="/assets/vt-x.png" width="60%" />
+<img src="/assets/vt-x.webp" width="60%" />
 
 # Solution
 <hr>

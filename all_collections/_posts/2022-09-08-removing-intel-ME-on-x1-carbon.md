@@ -19,7 +19,7 @@ Next we have to locate the BIOS chip on the motherboard. Typically, it is an 8-p
 
 ![bioschiplocation](/assets/bios_chip_location.jpeg "BIOS chip location")
 
-![winbondchip](/assets/winbond_chip.png "Windbond Chip")
+![winbondchip](/assets/winbond_chip.webp "Windbond Chip")
 
 Attach the SOIC clip with the RED cable oriented in the corner of the chip that has the circle on it then attach the header into the top part of the ZIF socket (25 BIOS section) and align it as such:
 

@@ -50,7 +50,7 @@ uint32_t pci_read_config_word(uint8_t bus, uint8_t device,
 
 My OS enumerates the virtual PCI devices QEMU provides to the guest as shown below.
 
-![Placeholder image](/assets/cryptos_pci_devs.png "Placeholder image")
+![Placeholder image](/assets/cryptos_pci_devs.webp "Placeholder image")
 
 Looking back at the QEMU terminal, we can see it has detected PCI configuration reads as we expected and it matches what our OS reports!
 The string formatting is as follows `pci_cfg_read(const char *dev, unsigned devid, unsigned fnid, unsigned offs, unsigned val) "%s %02u:%u @0x%x -> 0x%x"` [(source)](https://lxr.missinglinkelectronics.com/qemu+v2.5.1/trace-events#L1615).

@@ -75,7 +75,7 @@ gfoudree@z620 /tmp/poc % xxd < heapoverflow1
 
 Compiling GNU Barcode with ASAN helps give a hint as to what is going on when the crash occurs.
 
-![heapoverflow1](/assets/gnu_barcode_heapoverflow1_asan.png "Clang ASAN Output")
+![heapoverflow1](/assets/gnu_barcode_heapoverflow1_asan.webp "Clang ASAN Output")
 
 Examining this further in GDB, it appears as if the following snippet in `code128.c:443` is responsible for the crash here.
 
@@ -126,7 +126,7 @@ gfoudree@z620 /tmp/poc % xxd < heapoverflow2
 Here, ASAN gives us an even better hint that a heap overflow is occuring:
 
 
-![heapoverflow2](/assets/gnu_barcode_heapoverflow2_asan.png "Clang ASAN Output")
+![heapoverflow2](/assets/gnu_barcode_heapoverflow2_asan.webp "Clang ASAN Output")
 
 
 Digging through the source code and running the target in GDB, the source appears to be a different location inside of `code128.c:557`.
