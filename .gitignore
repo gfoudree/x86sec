@@ -1,4 +1,5 @@
 *.pyc
+scrub_exif.sh
 .jekyll-cache
 .sass-cache
 *.swp

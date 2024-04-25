@@ -30,10 +30,8 @@ int main() {
 
 We can see that the `readdir()` function is called to get the files in a folder, however we're interested in going as low-level as possible to see what we need to hook in the kernel to manipulate the listed files for all programs. A good way of doing this is to use the `strace` tool to log all of the syscalls a program invokes.
 
-
-`strace ./a.out`
-
 ```bash
+$ strace./a.out
 munmap(0x7fa11faa0000, 133984)          = 0
 openat(AT_FDCWD, ".", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
 fstat(3, {st_mode=S_IFDIR|S_ISVTX|0777, st_size=12288, ...}) = 0

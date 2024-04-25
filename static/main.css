@@ -1,15 +1,4 @@
-body {
-  background-color: #222;
-  font-family: Monospace;
-  font-size: 18px;
-  margin: 0px;
-  width: 100%;
-}
-p {
-  color: white;
-  font-size: 13px;
-  text-align: left;
-}
+
 nav {
   padding-top: 10px;
   display: block;
