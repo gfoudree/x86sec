@@ -12,4 +12,6 @@ gem "jekyll-seo-tag", "~> 2.8.0"
 
 gem "jekyll-sitemap", "~> 1.4"
 
-gem "webrick", "~> 1.8.1"
+gem "webrick", "~> 1.9.0"
+
+gem "jekyll", "~> 4.3.4"
