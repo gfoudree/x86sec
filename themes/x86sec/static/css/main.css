@@ -220,7 +220,7 @@ nav.site-nav a.active { color: var(--accent); }
   gap: 1rem;
   justify-content: center;
 }
-.hero-meta span { display: flex; align-items: center; gap: .35rem; }
+.hero-meta span { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; max-width: 100%; box-sizing: border-box; }
 .hero-meta .dot { color: var(--text-muted); }
 
 
@@ -301,6 +301,8 @@ nav.site-nav a.active { color: var(--accent); }
   gap: .4rem;
   justify-content: flex-end;
   padding-top: .2rem;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .tag {
   font-family: var(--font-mono);
@@ -584,4 +586,7 @@ pre[data-lang]::after {
   .post-tags { justify-content: flex-start; }
   nav.site-nav { gap: 1rem; }
   nav.site-nav a { font-size: .72rem; }
+  /* Ensure tags don't overflow on narrow screens */
+  .post-tags { width: 100%; overflow: visible; }
+  .tag { white-space: normal; }
 }

@@ -1,4 +1,9 @@
 *.pyc
+/public/
+/resources/
+/_vendor/
+Thumbs.db
+/.hugo_build.cfg
 .hugo_build.lock
 .DS_Store
 scrub_exif.sh
