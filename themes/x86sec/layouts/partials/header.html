@@ -1,0 +1,13 @@
+<header class="site-header">
+  <div class="container">
+    <a class="site-logo" href="{{ "/" | relURL }}" data-text="[{{ .Site.Title }}]"><span class="bracket">[</span>{{- .Site.Title -}}<span class="bracket">]</span></a>
+    <nav class="site-nav">
+      {{ range .Site.Menus.main }}
+      <a href="{{ .URL }}"
+         class="{{ if or (eq $.RelPermalink .URL) (hasPrefix $.RelPermalink .URL) }}active{{ end }}">
+        {{ .Name }}
+      </a>
+      {{ end }}
+    </nav>
+  </div>
+</header>

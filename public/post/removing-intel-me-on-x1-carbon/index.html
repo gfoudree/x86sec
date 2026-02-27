@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51372&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Removing Intel Management Engine From Lenovo X1 Carbon 6th Gen Laptop · x86sec</title>
+
+  <meta name="description" content="Vulnerability research, kernel exploitation, and reverse engineering.">
+  <meta name="author" content="Grant Foudree">
+
+  
+  <meta property="og:title" content="Removing Intel Management Engine From Lenovo X1 Carbon 6th Gen Laptop">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://localhost:51372/post/removing-intel-me-on-x1-carbon/">
+
+  
+  <link rel="canonical" href="http://localhost:51372/post/removing-intel-me-on-x1-carbon/">
+  <link rel="alternate" type="application/rss+xml" title="x86sec" href="http://localhost:51372/index.xml">
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/main.css">
+
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body><header class="site-header">
+  <div class="container">
+    <a class="site-logo" href="/" data-text="[x86sec]"><span class="bracket">[</span>x86sec<span class="bracket">]</span></a>
+    <nav class="site-nav">
+      
+      <a href="/"
+         class="active">
+        posts
+      </a>
+      
+      <a href="/about/"
+         class="">
+        about
+      </a>
+      
+    </nav>
+  </div>
+</header>
+<main>
+<div class="container">
+
+  
+  <div class="page-hero">
+    <h1>Removing Intel Management Engine From Lenovo X1 Carbon 6th Gen Laptop</h1>
+    
+    <div class="hero-meta">
+      <span><span class="dot">date</span> September 8, 2022</span>
+      
+      <span><span class="dot">read</span> 8 min</span>
+      
+      <span>
+        
+        <a href="/tags/me_cleaner" class="tag">me_cleaner</a>
+        
+        <a href="/tags/lenovo-x1-carbon" class="tag">lenovo x1 carbon</a>
+        
+        <a href="/tags/6th-gen" class="tag">6th gen</a>
+        
+        <a href="/tags/intel-me" class="tag">intel me</a>
+        
+        <a href="/tags/bios" class="tag">bios</a>
+        
+      </span>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="post-content">
+    <article class="prose">
+      <h2 id="intel-management-engine-me-removal">Intel Management Engine (ME) Removal</h2>
+<h2 id="getting-existing-firmware">Getting existing firmware</h2>
+<p>The ME firmware is bundled as part of the UEFI firmware on a computer, so we must obtain a copy of the existing UEFI firmware first. It might be possible to download a BIOS bundle from Lenovo&rsquo;s website, but to ensure success I decided to just read it directly from the BIOS chip on my laptop.</p>
+<p>There are several ways to read the BIOS chip, I chose to use an inexpensive ($13) <a href="https://web.archive.org/web/20220908183748/https://www.amazon.com/KeeYees-SOIC8-EEPROM-CH341A-Programmer/dp/B07SHSL9X9">CH341A USB programmer</a> which comes with a nice 8-pin SOIC clip so nothing has to be desoldered. You can use anything that will run SPI commands (Buspirate, RPI, etc&hellip;).</p>
+<p>Next we have to locate the BIOS chip on the motherboard. Typically, it is an 8-pin chip made by &ldquo;Winbond&rdquo; and if you lookup the part number it will be an SPI flash chip. On the X1 Carbon 6th gen, it is located under a sticker and the part number is <code>W25Q128JV</code>. From the datasheet we can see it is a 3.3V, 128M-Bit SPI Serial Flash chip. (The BIOS programmer does not list it as supported, but it works fine).</p>
+<p><img src="/bios_chip_location.jpeg" alt="bioschiplocation" title="BIOS chip location"></p>
+<p><img src="/winbond_chip.webp" alt="winbondchip" title="Windbond Chip"></p>
+<p>Attach the SOIC clip with the RED cable oriented in the corner of the chip that has the circle on it then attach the header into the top part of the ZIF socket (25 BIOS section) and align it as such:</p>
+<p><img src="/progrmamer_chip.jpeg" alt="programmerchip" title="Programmer chip"></p>
+<p>At this point, you should be able to read from the chip. We want to make a backup so we can restore the old BIOS if we break anything (and we will <code>:)</code>). If <code>flashrom</code> gives you an error, try fiddling with the clip and making sure it is attached properly.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─$ flashrom --programmer ch341a_spi -r backup.bin    
+</span></span><span style="display:flex;"><span>flashrom v1.2 on Linux 5.4.0-125-generic <span style="color:#f92672">(</span>x86_64<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>flashrom is free software, get the source code at https://flashrom.org
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Using clock_gettime <span style="color:#66d9ef">for</span> delay loops <span style="color:#f92672">(</span>clk_id: 1, resolution: 1ns<span style="color:#f92672">)</span>.
+</span></span><span style="display:flex;"><span>Found Winbond flash chip <span style="color:#e6db74">&#34;W25Q128.V&#34;</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">16384</span> kB, SPI<span style="color:#f92672">)</span> on ch341a_spi.
+</span></span><span style="display:flex;"><span>Reading flash... <span style="color:#66d9ef">done</span>.
+</span></span></code></pre></div><p><strong>To be <em>extra</em> safe, run the above command a couple more times to make extra backups and then verify the checksum (SHA512) is the <em>same</em> across all of them. Sometimes a bad read might occur because the clip unseats, etc&hellip; and the last thing you want is a corrupted backup image.</strong></p>
+<h2 id="using-me_cleaner">Using me_cleaner</h2>
+<p>Download <a href="https://github.com/corna/me_cleaner">me_cleaner</a> which we will use to disable/remove the Intel ME from the extracted firmware.</p>
+<p>There&rsquo;s two main modes you can run <code>me_cleaner</code> with - remove as many ME components as possible, or set the HAP bit and ask ME to disable itself. We will start by trying the first option and removing most of the ME code.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─$ python3 me_cleaner.py -S -O cleaned.bin ../../backup.bin                                                                                              
+</span></span><span style="display:flex;"><span>Full image detected
+</span></span><span style="display:flex;"><span>Found FPT header at 0x3010
+</span></span><span style="display:flex;"><span>Found <span style="color:#ae81ff">13</span> partition<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Found FTPR header: FTPR partition spans from 0x1000 to 0x130000
+</span></span><span style="display:flex;"><span>Found FTPR manifest at 0x1478
+</span></span><span style="display:flex;"><span>ME/TXE firmware version 11.8.92.4222 <span style="color:#f92672">(</span>generation 3<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Public key match: Intel ME, firmware versions 11.x.x.x
+</span></span><span style="display:flex;"><span>The HAP bit is NOT SET
+</span></span><span style="display:flex;"><span>Reading partitions list...
+</span></span><span style="display:flex;"><span> FTPR <span style="color:#f92672">(</span>0x00001000 - 0x000130000, 0x0012f000 total bytes<span style="color:#f92672">)</span>: NOT removed
+</span></span><span style="display:flex;"><span> FTUP <span style="color:#f92672">(</span>0x00272000 - 0x000600000, 0x0038e000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> DLMP <span style="color:#f92672">(</span>0x0012e000 - 0x000131000, 0x00003000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> PSVN <span style="color:#f92672">(</span>0x00000e00 - 0x000001000, 0x00000200 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> IVBP <span style="color:#f92672">(</span>0x0026e000 - 0x000272000, 0x00004000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> MFS  <span style="color:#f92672">(</span>0x00130000 - 0x00026e000, 0x0013e000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> NFTP <span style="color:#f92672">(</span>0x00272000 - 0x00057d000, 0x0030b000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> ROMB <span style="color:#f92672">(</span>      no data here      , 0x00000000 total bytes<span style="color:#f92672">)</span>: nothing to remove
+</span></span><span style="display:flex;"><span> WCOD <span style="color:#f92672">(</span>0x0057d000 - 0x0005fd000, 0x00080000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> LOCL <span style="color:#f92672">(</span>0x005fd000 - 0x000600000, 0x00003000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> FLOG <span style="color:#f92672">(</span>0x00600000 - 0x000601000, 0x00001000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> UTOK <span style="color:#f92672">(</span>0x00601000 - 0x000603000, 0x00002000 total bytes<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> ISHC <span style="color:#f92672">(</span>      no data here      , 0x00000000 total bytes<span style="color:#f92672">)</span>: nothing to remove
+</span></span><span style="display:flex;"><span>Removing partition entries in FPT...
+</span></span><span style="display:flex;"><span>Removing EFFS presence flag...
+</span></span><span style="display:flex;"><span>Correcting checksum <span style="color:#f92672">(</span>0x98<span style="color:#f92672">)</span>...
+</span></span><span style="display:flex;"><span>Reading FTPR modules list...
+</span></span><span style="display:flex;"><span> FTPR.man     <span style="color:#f92672">(</span>uncompressed, 0x001478 - 0x0021b4<span style="color:#f92672">)</span>: NOT removed, partition manif.
+</span></span><span style="display:flex;"><span> rbe.met      <span style="color:#f92672">(</span>uncompressed, 0x0021b4 - 0x00224a<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> fptemp.met   <span style="color:#f92672">(</span>uncompressed, 0x00224a - 0x002282<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> kernel.met   <span style="color:#f92672">(</span>uncompressed, 0x002282 - 0x002310<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> syslib.met   <span style="color:#f92672">(</span>uncompressed, 0x002310 - 0x002374<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> bup.met      <span style="color:#f92672">(</span>uncompressed, 0x002374 - 0x002936<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> pm.met       <span style="color:#f92672">(</span>uncompressed, 0x002936 - 0x0029e4<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> vfs.met      <span style="color:#f92672">(</span>uncompressed, 0x0029e4 - 0x003448<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> evtdisp.met  <span style="color:#f92672">(</span>uncompressed, 0x003448 - 0x0035d6<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> loadmgr.met  <span style="color:#f92672">(</span>uncompressed, 0x0035d6 - 0x0036fe<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> busdrv.met   <span style="color:#f92672">(</span>uncompressed, 0x0036fe - 0x003aa6<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> gpio.met     <span style="color:#f92672">(</span>uncompressed, 0x003aa6 - 0x003bf0<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> prtc.met     <span style="color:#f92672">(</span>uncompressed, 0x003bf0 - 0x003da0<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> policy.met   <span style="color:#f92672">(</span>uncompressed, 0x003da0 - 0x003f60<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> crypto.met   <span style="color:#f92672">(</span>uncompressed, 0x003f60 - 0x0040ea<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> heci.met     <span style="color:#f92672">(</span>uncompressed, 0x0040ea - 0x0042b6<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> storage.met  <span style="color:#f92672">(</span>uncompressed, 0x0042b6 - 0x0045b2<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> pmdrv.met    <span style="color:#f92672">(</span>uncompressed, 0x0045b2 - 0x0046d6<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> maestro.met  <span style="color:#f92672">(</span>uncompressed, 0x0046d6 - 0x0047c0<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> fpf.met      <span style="color:#f92672">(</span>uncompressed, 0x0047c0 - 0x0048d8<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> hci.met      <span style="color:#f92672">(</span>uncompressed, 0x0048d8 - 0x0049da<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> fwupdate.met <span style="color:#f92672">(</span>uncompressed, 0x0049da - 0x004ae2<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> ptt.met      <span style="color:#f92672">(</span>uncompressed, 0x004ae2 - 0x004bee<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> touch_fw.met <span style="color:#f92672">(</span>uncompressed, 0x004bee - 0x004d00<span style="color:#f92672">)</span>: NOT removed, module metadata
+</span></span><span style="display:flex;"><span> rbe          <span style="color:#f92672">(</span>Huffman     , 0x004d00 - 0x007bc0<span style="color:#f92672">)</span>: NOT removed, essential
+</span></span><span style="display:flex;"><span> fptemp       <span style="color:#f92672">(</span>LZMA/uncomp., 0x007bc0 - 0x009bc0<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> kernel       <span style="color:#f92672">(</span>Huffman     , 0x009bc0 - 0x019c00<span style="color:#f92672">)</span>: NOT removed, essential
+</span></span><span style="display:flex;"><span> syslib       <span style="color:#f92672">(</span>Huffman     , 0x019c00 - 0x02afc0<span style="color:#f92672">)</span>: NOT removed, essential
+</span></span><span style="display:flex;"><span> bup          <span style="color:#f92672">(</span>Huffman     , 0x02afc0 - 0x056040<span style="color:#f92672">)</span>: NOT removed, essential
+</span></span><span style="display:flex;"><span> pm           <span style="color:#f92672">(</span>Huffman     , 0x056040 - 0x059480<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> vfs          <span style="color:#f92672">(</span>Huffman     , 0x059480 - 0x067000<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> evtdisp      <span style="color:#f92672">(</span>Huffman     , 0x067000 - 0x069940<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> loadmgr      <span style="color:#f92672">(</span>Huffman     , 0x069940 - 0x06e740<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> busdrv       <span style="color:#f92672">(</span>Huffman     , 0x06e740 - 0x0721c0<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> gpio         <span style="color:#f92672">(</span>Huffman     , 0x0721c0 - 0x073e80<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> prtc         <span style="color:#f92672">(</span>Huffman     , 0x073e80 - 0x075000<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> policy       <span style="color:#f92672">(</span>Huffman     , 0x075000 - 0x0801c0<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> crypto       <span style="color:#f92672">(</span>Huffman     , 0x0801c0 - 0x09afc0<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> heci         <span style="color:#f92672">(</span>LZMA/uncomp., 0x09afc0 - 0x09ee80<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> storage      <span style="color:#f92672">(</span>Huffman     , 0x09ee80 - 0x0a4f00<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> pmdrv        <span style="color:#f92672">(</span>Huffman     , 0x0a4f00 - 0x0a6a80<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> maestro      <span style="color:#f92672">(</span>Huffman     , 0x0a6a80 - 0x0ab700<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> fpf          <span style="color:#f92672">(</span>Huffman     , 0x0ab700 - 0x0ae080<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> hci          <span style="color:#f92672">(</span>LZMA/uncomp., 0x0ae080 - 0x0ae900<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> fwupdate     <span style="color:#f92672">(</span>LZMA/uncomp., 0x0ae900 - 0x0b3640<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> ptt          <span style="color:#f92672">(</span>LZMA/uncomp., 0x0b3640 - 0x0c8fc0<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span> touch_fw     <span style="color:#f92672">(</span>LZMA/uncomp., 0x0c8fc0 - 0x130000<span style="color:#f92672">)</span>: removed
+</span></span><span style="display:flex;"><span>The ME minimum size should be <span style="color:#ae81ff">372736</span> bytes <span style="color:#f92672">(</span>0x5b000 bytes<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>The ME region can be reduced up to:
+</span></span><span style="display:flex;"><span> 00003000:0005dfff me
+</span></span><span style="display:flex;"><span>Setting the HAP bit in PCHSTRP0 to disable Intel ME...
+</span></span><span style="display:flex;"><span>Checking the FTPR RSA signature... VALID
+</span></span><span style="display:flex;"><span>Done! Good luck!
+</span></span></code></pre></div><p>It looks like it succeeded, great! Now let&rsquo;s flash the modified BIOS firmware back to the BIOS chip.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─$ flashrom --programmer ch341a_spi -w Downloads/me_cleaner/cleaned.bin                                                                                
+</span></span><span style="display:flex;"><span>flashrom v1.2 on Linux 5.4.0-125-generic <span style="color:#f92672">(</span>x86_64<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>flashrom is free software, get the source code at https://flashrom.org
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Using clock_gettime <span style="color:#66d9ef">for</span> delay loops <span style="color:#f92672">(</span>clk_id: 1, resolution: 1ns<span style="color:#f92672">)</span>.
+</span></span><span style="display:flex;"><span>Found Winbond flash chip <span style="color:#e6db74">&#34;W25Q128.V&#34;</span> <span style="color:#f92672">(</span><span style="color:#ae81ff">16384</span> kB, SPI<span style="color:#f92672">)</span> on ch341a_spi.
+</span></span><span style="display:flex;"><span>Reading old flash chip contents... <span style="color:#66d9ef">done</span>.
+</span></span><span style="display:flex;"><span>Erasing and writing flash chip... Erase/write <span style="color:#66d9ef">done</span>.
+</span></span><span style="display:flex;"><span>Verifying flash... 
+</span></span><span style="display:flex;"><span>VERIFIED.
+</span></span></code></pre></div><p>Now, let&rsquo;s disconnect the clip and power on the laptop&hellip; And we get a bunch of musical tones playing and a black screen. Great. It looks like this has removed some component that will not allow the laptop to boot. Restoring the backup firmware works fine and the laptop powers on without issues. Time for plan B&hellip;</p>
+<h2 id="setting-the-hap-bit">Setting the HAP bit</h2>
+<p>There is an undocumented setting (supposedly there for US Govermental agencies to use on sensitive devices) called the &ldquo;High Assurance Platform&rdquo; bit which tells the ME to disable itself. <code>me_cleaner</code> can be used to set this in our BIOS firmware - let&rsquo;s go ahead and give it a try:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─$ python3 me_cleaner.py -s -O cleaned_soft.bin ../../backup.bin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Full image detected
+</span></span><span style="display:flex;"><span>Found FPT header at 0x3010
+</span></span><span style="display:flex;"><span>Found <span style="color:#ae81ff">13</span> partition<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Found FTPR header: FTPR partition spans from 0x1000 to 0x130000
+</span></span><span style="display:flex;"><span>Found FTPR manifest at 0x1478
+</span></span><span style="display:flex;"><span>ME/TXE firmware version 11.8.92.4222 <span style="color:#f92672">(</span>generation 3<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>Public key match: Intel ME, firmware versions 11.x.x.x
+</span></span><span style="display:flex;"><span>The HAP bit is NOT SET
+</span></span><span style="display:flex;"><span>Setting the HAP bit in PCHSTRP0 to disable Intel ME...
+</span></span><span style="display:flex;"><span>Checking the FTPR RSA signature... VALID
+</span></span><span style="display:flex;"><span>Done! Good luck!
+</span></span></code></pre></div><p>Flashing this version back to the board works great and the laptop powers right up without any issues!</p>
+<h2 id="checking-if-the-me-has-been-disabledremoved">Checking if the ME has been disabled/removed</h2>
+<p>There are several ways we can try and check if the ME has been disabled. <a href="https://github.com/mjg59/mei-amt-check">MEI AMT Check</a> will tell us if AMT is working (part of the ME) and running it appears like it is disabled. So far so good :)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─$ sudo ./mei-amt-check
+</span></span><span style="display:flex;"><span>Unable to find a Management Engine interface - run sudo modprobe mei_me and retry.
+</span></span><span style="display:flex;"><span>If you receive the same error, this system does not have AMT
+</span></span></code></pre></div><p>Next, let&rsquo;s try <a href="https://github.com/corna/me_cleaner/wiki/Get-the-status-of-Intel-ME">Coreboot&rsquo;s tool to check</a>. There&rsquo;s an error at the top (but some forums say to ignore it) and it too reports it can&rsquo;t find the PCI device presented by the ME.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─$ sudo ./intelmetool -d -m                                                                                        
+</span></span><span style="display:flex;"><span>Bad news, you have a <span style="color:#e6db74">`</span>Sunrise Point LPC Controller/eSPI Controller<span style="color:#e6db74">`</span> so you have ME hardware on board and you can<span style="color:#e6db74">&#39;t control or disable it, continuing...
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">ME PCI device is hidden
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">RCBA addr: 0x00000000
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Can&#39;</span>t find ME PCI device
+</span></span></code></pre></div><p>Intel also has a ME version checker tool which also reports an issue talking to the ME.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>└─$ sudo ./intel_csme_version_detection_tool --help                                                                                       
+</span></span><span style="display:flex;"><span>Intel<span style="color:#f92672">(</span>R<span style="color:#f92672">)</span> CSME Version Detection Tool
+</span></span><span style="display:flex;"><span>Copyright<span style="color:#f92672">(</span>C<span style="color:#f92672">)</span> 2017-2022, Intel Corporation, All rights reserved.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Application Version: 7.0.2.0
+</span></span><span style="display:flex;"><span>Scan date: 2022-09-08 05:14:21 GMT
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>*** Host Computer Information ***
+</span></span><span style="display:flex;"><span>Name: dell-pc
+</span></span><span style="display:flex;"><span>Manufacturer: LENOVO
+</span></span><span style="display:flex;"><span>Model: 20KGS3XR00
+</span></span><span style="display:flex;"><span>Processor Name: Intel<span style="color:#f92672">(</span>R<span style="color:#f92672">)</span> Core<span style="color:#f92672">(</span>TM<span style="color:#f92672">)</span> i7-8650U CPU @ 1.90GHz
+</span></span><span style="display:flex;"><span>OS Version: Manjaro Linux <span style="color:#f92672">(</span>5.15.60-1-MANJARO<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>*** Risk Assessment ***
+</span></span><span style="display:flex;"><span>  Detection Error: This system may be vulnerable,
+</span></span><span style="display:flex;"><span>  either the Intel<span style="color:#f92672">(</span>R<span style="color:#f92672">)</span> MEI/TXEI driver is not installed
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">(</span>available from your system manufacturer<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  or the system manufacturer does not permit access
+</span></span><span style="display:flex;"><span>  to the ME/TXE from the host driver.
+</span></span></code></pre></div><p>Finally, let&rsquo;s see if the BIOS configuration page has any details:</p>
+<p><img src="/bios_settings.jpeg" alt="biossettings"></p>
+<p>We can see that no version of the ME is detected! All 4 separate methods all report the ME as inaccessible/disabled which leads me to believe setting the HAP bit was successful in disabling it.</p>
+
+    </article>
+
+    
+    
+    <div class="pagination" style="margin-top:3rem;">
+      <a href="http://localhost:51372/post/uefi-oprom-bootkit/">← UEFI Option ROM Bootkit</a>
+      <a href="http://localhost:51372/post/gnu-barcode-heap-overflow/">AFL&#43;&#43;: Finding several heap overflows in GNU Barcode 0.99 →</a>
+    </div>
+    
+  </div>
+
+</div>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <div class="footer-left">
+      <strong>x86sec</strong> — a cybersecurity blog<br>
+      &copy; 2026 Grant Foudree
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/gfoudree" rel="noopener">github</a>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

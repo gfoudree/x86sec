@@ -1,0 +1,10 @@
+[module]
+  [module.hugoVersion]
+    extended = false
+    min      = "0.110.0"
+
+name        = "x86sec"
+license     = "MIT"
+description = "A hacker-professional theme for low-level cybersecurity blogs"
+homepage    = "https://x86sec.com"
+tags        = ["blog", "security", "hacker", "minimal"]

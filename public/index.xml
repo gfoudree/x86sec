@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>x86sec</title>
+    <link>http://localhost:51372/</link>
+    <description>Recent content on x86sec</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 14 Nov 2024 00:50:09 -0600</lastBuildDate>
+    <atom:link href="http://localhost:51372/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Securing Sites With Hardware MTLS and Yubikeys</title>
+      <link>http://localhost:51372/post/securing-sites-with-hardware-mtls-and-yubikeys/</link>
+      <pubDate>Thu, 14 Nov 2024 00:50:09 -0600</pubDate>
+      <guid>http://localhost:51372/post/securing-sites-with-hardware-mtls-and-yubikeys/</guid>
+      <description>&lt;h2 id=&#34;mtls&#34;&gt;mTLS&lt;/h2&gt;&#xA;&lt;h3 id=&#34;overview&#34;&gt;Overview&lt;/h3&gt;&#xA;&lt;p&gt;In this post, we will deploy mTLS by using Caddy as reverse proxy to force client authentication before accessing sites, and store the client certificates in hardware via Yubikeys.&lt;/p&gt;&#xA;&lt;p&gt;TLS is the backbone for securing HTTP traffic and is commonly deployed in a way that authenticates the site only. This is perfectly fine, however sometimes it is useful for the site to also authenticate the user. This is known as &amp;ldquo;mTLS&amp;rdquo; or &amp;ldquo;Mutual TLS&amp;rdquo;.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Reverse Engineering and Flashing iPXE to Tenda Gigabit NIC</title>
+      <link>http://localhost:51372/post/flashing-ipxe-to-tenda-gigabit-nic/</link>
+      <pubDate>Thu, 25 Apr 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/flashing-ipxe-to-tenda-gigabit-nic/</guid>
+      <description>&lt;h2 id=&#34;tenda-gigabit-nic-and-pxe-booting&#34;&gt;Tenda Gigabit NIC and PXE booting&lt;/h2&gt;&#xA;&lt;p&gt;I had a Tenda Gigabit NIC laying around and noticed it contained 2 chips on it which looked to be like EEPROM and flash chips and was curious on what I could do with them. It is common for NICs to contain an option rom (OPROM) which runs during boot allowing the user to PXE boot an operating system. Usually these OPROMs are proprietary programs and can&amp;rsquo;t be hacked to support additional features beyond standard booting, but there is an open-source project &lt;a href=&#34;https://ipxe.org/&#34;&gt;iPXE&lt;/a&gt; which supports lots of additional features.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Sierra Wireless EM7455 4G Modem Hacking</title>
+      <link>http://localhost:51372/post/sierra-wireless-em7455-4g-modem-hacking/</link>
+      <pubDate>Mon, 27 Feb 2023 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/sierra-wireless-em7455-4g-modem-hacking/</guid>
+      <description>&lt;h2 id=&#34;sierra-wireless-em7455-4g-modem&#34;&gt;Sierra Wireless EM7455, 4G Modem&lt;/h2&gt;&#xA;&lt;p&gt;Modems are in many devices, perhaps most importantly your cellphone. These devices are almost exclusively black boxes and run lots of code the end-user has zero knowledge or access to. Additionally, these modems interface with the host via USB and sometimes PCI which gives them the potential to access privileged information on the host.&lt;/p&gt;&#xA;&lt;img src=&#34;http://localhost:51372/em7455.jpeg&#34; alt=&#34;EM7455&#34; style=&#34;width:30%;height:80%&#34;&gt;&#xA;## Changing IMEI&#xA;**WARNING** - It appears as if you can only change the IMEI *ONCE*. I did not try doing any serious resetting of the modem, but issuing multiple commands to set the IMEI fails so beware.&#xA;&lt;p&gt;The IMEI on a cellular device uniquely identifies it and is used to block/accept and even track devices. Here we will see how to change it on the em7455 modem. Let&amp;rsquo;s start by checking the current IMEI with ModemManager (I&amp;rsquo;ve changed mine for privacy reasons):&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Proxmark3: Crack and Clone Apartment RFID Key Fob</title>
+      <link>http://localhost:51372/post/rfid-hacking-proxmark/</link>
+      <pubDate>Mon, 20 Feb 2023 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/rfid-hacking-proxmark/</guid>
+      <description>&lt;h2 id=&#34;rfid-hacking&#34;&gt;RFID Hacking&lt;/h2&gt;&#xA;&lt;h2 id=&#34;proxmark&#34;&gt;Proxmark&lt;/h2&gt;&#xA;&lt;p&gt;The Proxmark is a neat tool to interact with RFID tags and do things like read, write, clone, simulate, and much more. They are portable and have many many features including the ability to crack authentication keys on tags and sniff RFID transactions.&lt;/p&gt;&#xA;&lt;img src=&#34;http://localhost:51372/proxmark3.webp&#34; alt=&#34;Proxmark3 Easy&#34; style=&#34;width:30%;height:100%&#34;&gt;&#xA;&lt;h3 id=&#34;buying&#34;&gt;Buying&lt;/h3&gt;&#xA;&lt;p&gt;I chose to buy a Chinese clone (Proxmark 3 Easy) from the &amp;ldquo;PiSwords&amp;rdquo; manufacturer on AliExpress. &lt;strong&gt;So far it has worked without any issues&lt;/strong&gt;, and is explicitly claimed to be supported by the &lt;a href=&#34;https://github.com/RfidResearchGroup/proxmark3&#34;&gt;Iceman fork&lt;/a&gt; of the Proxmark firmware. They cost around $40-50 USD on AliExpress/Ebay.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>UEFI Option ROM Bootkit</title>
+      <link>http://localhost:51372/post/uefi-oprom-bootkit/</link>
+      <pubDate>Mon, 26 Sep 2022 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/uefi-oprom-bootkit/</guid>
+      <description>&lt;h2 id=&#34;uefi-option-rom-bootkit&#34;&gt;UEFI Option ROM Bootkit&lt;/h2&gt;&#xA;&lt;h2 id=&#34;option-roms&#34;&gt;Option ROMs&lt;/h2&gt;&#xA;&lt;p&gt;Option ROMs (OpRom) are programs that get loaded by UEFI/BIOS during boot which allow a hardware vendor to execute custom code to initialize a device, install a respective driver, etc. A popular example is &lt;a href=&#34;https://ipxe.org/&#34;&gt;iPXE&lt;/a&gt; which allows a NIC to PXE boot the host via an option ROM.&lt;/p&gt;&#xA;&lt;h2 id=&#34;adding-an-option-rom-to-vms&#34;&gt;Adding an Option ROM to VMs&lt;/h2&gt;&#xA;&lt;h4 id=&#34;qemukvm&#34;&gt;QEMU/KVM&lt;/h4&gt;&#xA;&lt;p&gt;One easy way to add an OpRom to QEMU VMs is to use the e1000e NIC and pass in the OpRom as a parameter to the card&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Removing Intel Management Engine From Lenovo X1 Carbon 6th Gen Laptop</title>
+      <link>http://localhost:51372/post/removing-intel-me-on-x1-carbon/</link>
+      <pubDate>Thu, 08 Sep 2022 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/removing-intel-me-on-x1-carbon/</guid>
+      <description>&lt;h2 id=&#34;intel-management-engine-me-removal&#34;&gt;Intel Management Engine (ME) Removal&lt;/h2&gt;&#xA;&lt;h2 id=&#34;getting-existing-firmware&#34;&gt;Getting existing firmware&lt;/h2&gt;&#xA;&lt;p&gt;The ME firmware is bundled as part of the UEFI firmware on a computer, so we must obtain a copy of the existing UEFI firmware first. It might be possible to download a BIOS bundle from Lenovo&amp;rsquo;s website, but to ensure success I decided to just read it directly from the BIOS chip on my laptop.&lt;/p&gt;&#xA;&lt;p&gt;There are several ways to read the BIOS chip, I chose to use an inexpensive ($13) &lt;a href=&#34;https://web.archive.org/web/20220908183748/https://www.amazon.com/KeeYees-SOIC8-EEPROM-CH341A-Programmer/dp/B07SHSL9X9&#34;&gt;CH341A USB programmer&lt;/a&gt; which comes with a nice 8-pin SOIC clip so nothing has to be desoldered. You can use anything that will run SPI commands (Buspirate, RPI, etc&amp;hellip;).&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>AFL&#43;&#43;: Finding several heap overflows in GNU Barcode 0.99</title>
+      <link>http://localhost:51372/post/gnu-barcode-heap-overflow/</link>
+      <pubDate>Sat, 18 Sep 2021 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/gnu-barcode-heap-overflow/</guid>
+      <description>&lt;h2 id=&#34;afl&#34;&gt;AFL++&lt;/h2&gt;&#xA;&lt;p&gt;&lt;a href=&#34;https://github.com/AFLplusplus/AFLplusplus&#34;&gt;AFL++&lt;/a&gt; is an improved version of AFL, a popular and successful fuzzer. In this article we will use it to discover a couple heap-overflow bugs in GNU Barcode 0.99.&lt;/p&gt;&#xA;&lt;h2 id=&#34;compiling&#34;&gt;Compiling&lt;/h2&gt;&#xA;&lt;p&gt;It is quite simple to use AFL++, especially if you have access to the source code of the program you are trying to fuzz.&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Install some deps on Ubuntu&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;apt install git clang make build-essential gcc-9-plugin-dev&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://github.com/AFLplusplus/AFLplusplus.git&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cd AFLplusplus&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# Set LLVM_CONFIG to point to your llvm-config binary&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;LLVM_CONFIG&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;llvm-config-10 make -j&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;building-a-target&#34;&gt;Building a Target&lt;/h2&gt;&#xA;&lt;p&gt;AFL++ makes it rather easy here - all you have to do is replace &lt;code&gt;CC&lt;/code&gt;/&lt;code&gt;CXX&lt;/code&gt; with the &lt;code&gt;afl-clang-fast&lt;/code&gt;/&lt;code&gt;afl-clang-fast++&lt;/code&gt; file in your AFL++ build folder and it handles the rest.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>HP z620 UEFI Backdoor</title>
+      <link>http://localhost:51372/post/hp-z620-uefi-backdoor/</link>
+      <pubDate>Sun, 25 Apr 2021 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/hp-z620-uefi-backdoor/</guid>
+      <description>&lt;h2 id=&#34;firmware-analysis&#34;&gt;Firmware Analysis&lt;/h2&gt;&#xA;&lt;p&gt;Picking apart firmware is quite interesting to me and so I thought it would be fun to reverse engineer my desktop&amp;rsquo;s BIOS and see what I could find.&lt;/p&gt;&#xA;&lt;h2 id=&#34;extracting-uefi-modules&#34;&gt;Extracting UEFI Modules&lt;/h2&gt;&#xA;&lt;p&gt;My desktop is an HP z620 and the latest BIOS version is &lt;a href=&#34;http://localhost:51372/J61_0396.bin&#34;&gt;J61_0396.bin&lt;/a&gt;. Most UEFI BIOS images are a collection of modules (drivers, microcode, applications, etc&amp;hellip;) that can be extracted and examined. The drivers and applications are PE32+ executables which is convenient as many reverse engineering tools support this executable format. We can examine/modify the BIOS image with &lt;a href=&#34;https://github.com/LongSoft/UEFITool&#34;&gt;UEFITool&lt;/a&gt; and pick apart the sections of interest.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Advanced QEMU Debugging - Trace Events</title>
+      <link>http://localhost:51372/post/advanced-qemu-debugging/</link>
+      <pubDate>Wed, 14 Oct 2020 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/advanced-qemu-debugging/</guid>
+      <description>&lt;h2 id=&#34;qemu&#34;&gt;QEMU&lt;/h2&gt;&#xA;&lt;p&gt;I enjoy working on operating system kernels and hypervisors, and for a lot of my personal work I use &lt;a href=&#34;https://www.qemu.org/&#34;&gt;QEMU&lt;/a&gt; to help with my development and debugging. Here I&amp;rsquo;ll demonstrate an advanced debugging feature in QEMU I&amp;rsquo;ve found quite useful called &amp;ldquo;trace events&amp;rdquo;.&lt;/p&gt;&#xA;&lt;p&gt;QEMU has a list of supported &amp;ldquo;trace events&amp;rdquo; to get more insight into the running guest OS. You can specify multiple trace commands&#xA;by adding &lt;code&gt;-d trace:&amp;lt;name&amp;gt;&lt;/code&gt; to the QEMU command line. For example, tracing PCI configuration reads can be done with &lt;code&gt;qemu-system-x86_64 -d trace:pci_cfg_read&lt;/code&gt;.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Linux Kernel Rootkit Basics</title>
+      <link>http://localhost:51372/post/linux-kernel-rootkit/</link>
+      <pubDate>Sun, 08 Mar 2020 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/linux-kernel-rootkit/</guid>
+      <description>&lt;h2 id=&#34;rootkits&#34;&gt;Rootkits&lt;/h2&gt;&#xA;&lt;p&gt;Rootkits are an advanced form of malware that leverage elevated privileges to hide themselves from the operating system. In this post we will go over how to write a basic rootkit that is capable of hiding files and processes on Linux.&lt;/p&gt;&#xA;&lt;h2 id=&#34;listing-files-in-a-directory&#34;&gt;Listing files in a directory&lt;/h2&gt;&#xA;&lt;p&gt;Let&amp;rsquo;s look at a simple C program that can list files in a directory.&lt;/p&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-c&#34; data-lang=&#34;c&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#include&lt;/span&gt; &lt;span style=&#34;color:#75715e&#34;&gt;&amp;lt;stdio.h&amp;gt;&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#include&lt;/span&gt; &lt;span style=&#34;color:#75715e&#34;&gt;&amp;lt;dirent.h&amp;gt;&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;() {&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#x9;DIR &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;d &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;opendir&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;.&amp;#34;&lt;/span&gt;);&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#x9;&lt;span style=&#34;color:#66d9ef&#34;&gt;struct&lt;/span&gt; dirent &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;dire;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#x9;&lt;span style=&#34;color:#66d9ef&#34;&gt;while&lt;/span&gt; ((dire &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;readdir&lt;/span&gt;(d)) &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; NULL) {&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#x9;&#x9;&lt;span style=&#34;color:#a6e22e&#34;&gt;printf&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;%s&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;, dire&lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt;d_name);&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#x9;}&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&#x9;&lt;span style=&#34;color:#a6e22e&#34;&gt;closedir&lt;/span&gt;(d);&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;We can see that the &lt;code&gt;readdir()&lt;/code&gt; function is called to get the files in a folder, however we&amp;rsquo;re interested in going as low-level as possible to see what we need to hook in the kernel to manipulate the listed files for all programs. A good way of doing this is to use the &lt;code&gt;strace&lt;/code&gt; tool to log all of the syscalls a program invokes.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>StackSupervisor - a Hypervisor-based Stack Guard</title>
+      <link>http://localhost:51372/post/hypervisor-stack-guard/</link>
+      <pubDate>Tue, 03 Mar 2020 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/hypervisor-stack-guard/</guid>
+      <description>&lt;h2 id=&#34;buffer-overflows&#34;&gt;Buffer Overflows&lt;/h2&gt;&#xA;&lt;p&gt;Stack-based buffer overflow attacks have been&#xA;around for some time and have been a popular technique for exploiting software. As a result, several mitigation techniques have been proposed and implemented, however none solve the problem completely. This post will demonstrate a new way to detect and protect against kernel-based buffer overflow attacks in guest operating systems using the KVM hypervisor.&lt;/p&gt;&#xA;&lt;h2 id=&#34;some-existing-stack-smashing-protections&#34;&gt;(Some) Existing Stack Smashing Protections&lt;/h2&gt;&#xA;&lt;h3 id=&#34;dep-or-wx-memory&#34;&gt;DEP or W^X Memory&lt;/h3&gt;&#xA;&lt;p&gt;Data execution protection (DEP) and Write XOR Execute Memory&#xA;are the same technique that states that regions of the&#xA;executable can be marked as write or executable, but&#xA;not both. From a security standpoint, you don’t want&#xA;to have regions that can be written to also as marked&#xA;as executable. W^X Memory acts as a prevention technique for attackers who inject shellcode&#xA;into the stack and attempt to execute it.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Simple ELF Crypter</title>
+      <link>http://localhost:51372/post/simple-elf-crypter/</link>
+      <pubDate>Sat, 22 Feb 2020 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/simple-elf-crypter/</guid>
+      <description>&lt;h2 id=&#34;elf-files&#34;&gt;ELF Files&lt;/h2&gt;&#xA;&lt;p&gt;There are several techniques that can be used to obsfucate what an executable does at runtime. This post will demonstrate a minimal example of a self-modifying, ELF executable that contains an encrypted section of code that, at runtime, bruteforces its own key and decrypts itself.&lt;/p&gt;&#xA;&lt;h2 id=&#34;elf-sections&#34;&gt;ELF Sections&lt;/h2&gt;&#xA;&lt;p&gt;ELF executables are comprised of several &amp;ldquo;sections&amp;rdquo;. Code that is executed, such as &lt;code&gt;int main()&lt;/code&gt;, is placed inside the &lt;code&gt;.text&lt;/code&gt; section.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Anti Reverse Engineering Tricks</title>
+      <link>http://localhost:51372/post/anti-reverse-engineering/</link>
+      <pubDate>Mon, 05 Mar 2018 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/anti-reverse-engineering/</guid>
+      <description>&lt;h2 id=&#34;jumping-over-opcodes&#34;&gt;Jumping Over Opcodes&lt;/h2&gt;&#xA;&lt;br&gt;&#xA;It is not uncommon for malware to attempt to obfuscate its behavior in various ways to avoid analysis. In this post we will go over&#xA;some common tricks used to confuse static analysis tools from obtaining the correct disassembly of a program.&#xA;&lt;p&gt;A very simple trick is to jump over instructions that we don&amp;rsquo;t want to execute. Obviously this can get more complex, but the concept is simple.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>TEG-S18TXE Switch Reverse Engineering</title>
+      <link>http://localhost:51372/post/switch-reverse-engineering/</link>
+      <pubDate>Sat, 11 Nov 2017 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/switch-reverse-engineering/</guid>
+      <description>&lt;h2 id=&#34;teg-s18txe-switch&#34;&gt;TEG-S18TXE Switch&lt;/h2&gt;&#xA;&lt;p&gt;I happened to have an old &lt;a href=&#34;https://www.trendnet.com/products/proddetail?prod=185_TEG-S18TXE&#34;&gt;Trendnet TEG-S18TXE switch&lt;/a&gt;&#xA;laying around the lab at work, so I decided to open it up and see if there was&#xA;anything interesting inside. Usually, &amp;ldquo;dumb&amp;rdquo; switches do not contain many interesting hackable components&#xA;as they are rather simplistic devices, however I got lucky and spotted an EEPROM chip on the board. If you look closely,&#xA;you might notice that it is an Atmel AT93C46, 1K serial EEPROM.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>About</title>
+      <link>http://localhost:51372/about/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/about/</guid>
+      <description>&lt;p&gt;Iowa State, computer engineering graduate (BS/MSc). Passionate about cybersecurity, software development, and Linux/BSD. San Francisco/Bay Area.&lt;/p&gt;&#xA;&lt;h2 id=&#34;contact&#34;&gt;Contact&lt;/h2&gt;&#xA;&lt;p&gt;GitHub: &lt;a href=&#34;https://github.com/gfoudree&#34;&gt;gfoudree&lt;/a&gt;&lt;/p&gt;&#xA;&lt;p&gt;GPG: &lt;a href=&#34;http://localhost:51372/gfoudree.asc&#34;&gt;D657 3538 0C91 EC31 CD43 A7DE 9575 9FC6 9770 ED67&lt;/a&gt;&lt;/p&gt;&#xA;&lt;p&gt;Email: &lt;span data-email-b64=&#34;bW9jLmxpYW1ub3RvcnBAZWVyZHVvZmc=&#34;&gt;[email protected]&lt;/span&gt;&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,33 @@
+baseURL = "https://x86sec.com/"
+languageCode = "en-us"
+title = "x86sec"
+theme = "x86sec"
+
+[params]
+  author      = "Grant Foudree"
+  tagline     = "a cybersecurity blog"
+  description = "Vulnerability research, kernel exploitation, and reverse engineering."
+  github      = "gfoudree"
+  syntaxHighlight = true
+
+[taxonomies]
+  tag      = "tags"
+  category = "categories"
+
+[markup.highlight]
+  style           = "monokai"
+  lineNos         = false
+  tabWidth        = 4
+  noClasses       = true
+
+[markup.goldmark.renderer]
+  unsafe = true   # allow raw HTML in markdown
+
+[[menus.main]]
+  name       = "posts"
+  url        = "/"
+  weight     = 1
+[[menus.main]]
+  name       = "about"
+  url        = "/about/"
+  weight     = 2

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Osdev on x86sec</title>
+    <link>http://localhost:51372/tags/osdev/</link>
+    <description>Recent content in Osdev on x86sec</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 14 Oct 2020 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:51372/tags/osdev/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Advanced QEMU Debugging - Trace Events</title>
+      <link>http://localhost:51372/post/advanced-qemu-debugging/</link>
+      <pubDate>Wed, 14 Oct 2020 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/advanced-qemu-debugging/</guid>
+      <description>&lt;h2 id=&#34;qemu&#34;&gt;QEMU&lt;/h2&gt;&#xA;&lt;p&gt;I enjoy working on operating system kernels and hypervisors, and for a lot of my personal work I use &lt;a href=&#34;https://www.qemu.org/&#34;&gt;QEMU&lt;/a&gt; to help with my development and debugging. Here I&amp;rsquo;ll demonstrate an advanced debugging feature in QEMU I&amp;rsquo;ve found quite useful called &amp;ldquo;trace events&amp;rdquo;.&lt;/p&gt;&#xA;&lt;p&gt;QEMU has a list of supported &amp;ldquo;trace events&amp;rdquo; to get more insight into the running guest OS. You can specify multiple trace commands&#xA;by adding &lt;code&gt;-d trace:&amp;lt;name&amp;gt;&lt;/code&gt; to the QEMU command line. For example, tracing PCI configuration reads can be done with &lt;code&gt;qemu-system-x86_64 -d trace:pci_cfg_read&lt;/code&gt;.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

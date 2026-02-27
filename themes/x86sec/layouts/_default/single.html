@@ -1,0 +1,39 @@
+{{ define "main" }}
+<div class="container">
+
+  {{/* ── Post header ── */}}
+  <div class="page-hero">
+    <h1>{{ .Title }}</h1>
+    {{ if eq .Type "post" }}
+    <div class="hero-meta">
+      <span><span class="dot">date</span> {{ .Date.Format "January 2, 2006" }}</span>
+      {{ with .Params.author }}<span><span class="dot">by</span> {{ . }}</span>{{ end }}
+      <span><span class="dot">read</span> {{ .ReadingTime }} min</span>
+      {{ if .Params.tags }}
+      <span>
+        {{ range .Params.tags }}
+        <a href="/tags/{{ . | urlize }}" class="tag">{{ . }}</a>
+        {{ end }}
+      </span>
+      {{ end }}
+    </div>
+    {{ end }}
+  </div>
+
+  {{/* ── Post body ── */}}
+  <div class="post-content">
+    <article class="prose">
+      {{ .Content }}
+    </article>
+
+    {{/* ── Prev / Next ── */}}
+    {{ if or .PrevInSection .NextInSection }}
+    <div class="pagination" style="margin-top:3rem;">
+      {{ with .NextInSection }}<a href="{{ .Permalink }}">← {{ .Title }}</a>{{ else }}<span></span>{{ end }}
+      {{ with .PrevInSection }}<a href="{{ .Permalink }}">{{ .Title }} →</a>{{ end }}
+    </div>
+    {{ end }}
+  </div>
+
+</div>
+{{ end }}

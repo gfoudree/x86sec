@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>IPXE on x86sec</title>
+    <link>http://localhost:51372/tags/ipxe/</link>
+    <description>Recent content in IPXE on x86sec</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 25 Apr 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:51372/tags/ipxe/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Reverse Engineering and Flashing iPXE to Tenda Gigabit NIC</title>
+      <link>http://localhost:51372/post/flashing-ipxe-to-tenda-gigabit-nic/</link>
+      <pubDate>Thu, 25 Apr 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/flashing-ipxe-to-tenda-gigabit-nic/</guid>
+      <description>&lt;h2 id=&#34;tenda-gigabit-nic-and-pxe-booting&#34;&gt;Tenda Gigabit NIC and PXE booting&lt;/h2&gt;&#xA;&lt;p&gt;I had a Tenda Gigabit NIC laying around and noticed it contained 2 chips on it which looked to be like EEPROM and flash chips and was curious on what I could do with them. It is common for NICs to contain an option rom (OPROM) which runs during boot allowing the user to PXE boot an operating system. Usually these OPROMs are proprietary programs and can&amp;rsquo;t be hacked to support additional features beyond standard booting, but there is an open-source project &lt;a href=&#34;https://ipxe.org/&#34;&gt;iPXE&lt;/a&gt; which supports lots of additional features.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

@@ -1,4 +1,6 @@
 *.pyc
+.hugo_build.lock
+.DS_Store
 scrub_exif.sh
 .jekyll-cache
 .sass-cache

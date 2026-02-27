@@ -1,0 +1,14 @@
+{{ define "main" }}
+<div class="container" style="padding:6rem 1.5rem;text-align:center;">
+  <div style="font-family:var(--font-mono);font-size:4rem;color:var(--border2);margin-bottom:1rem;">404</div>
+  <div style="font-family:var(--font-mono);color:var(--accent3);font-size:.9rem;margin-bottom:.5rem;">
+    segmentation fault (core dumped)
+  </div>
+  <p style="color:var(--text-dim);margin-bottom:2rem;">This page doesn't exist or was moved.</p>
+  <a href="/" style="font-family:var(--font-mono);font-size:.82rem;border:1px solid var(--border2);padding:.5rem 1.25rem;border-radius:3px;color:var(--text-dim);transition:.15s;"
+     onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+     onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text-dim)'">
+    → return home
+  </a>
+</div>
+{{ end }}

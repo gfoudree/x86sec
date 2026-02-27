@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51372&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anti Reverse Engineering Tricks · x86sec</title>
+
+  <meta name="description" content="Vulnerability research, kernel exploitation, and reverse engineering.">
+  <meta name="author" content="Grant Foudree">
+
+  
+  <meta property="og:title" content="Anti Reverse Engineering Tricks">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://localhost:51372/post/anti-reverse-engineering/">
+
+  
+  <link rel="canonical" href="http://localhost:51372/post/anti-reverse-engineering/">
+  <link rel="alternate" type="application/rss+xml" title="x86sec" href="http://localhost:51372/index.xml">
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/main.css">
+
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body><header class="site-header">
+  <div class="container">
+    <a class="site-logo" href="/" data-text="[x86sec]"><span class="bracket">[</span>x86sec<span class="bracket">]</span></a>
+    <nav class="site-nav">
+      
+      <a href="/"
+         class="active">
+        posts
+      </a>
+      
+      <a href="/about/"
+         class="">
+        about
+      </a>
+      
+    </nav>
+  </div>
+</header>
+<main>
+<div class="container">
+
+  
+  <div class="page-hero">
+    <h1>Anti Reverse Engineering Tricks</h1>
+    
+    <div class="hero-meta">
+      <span><span class="dot">date</span> March 5, 2018</span>
+      
+      <span><span class="dot">read</span> 3 min</span>
+      
+      <span>
+        
+        <a href="/tags/reverse-engineering" class="tag">reverse engineering</a>
+        
+        <a href="/tags/obsfucation" class="tag">obsfucation</a>
+        
+      </span>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="post-content">
+    <article class="prose">
+      <h2 id="jumping-over-opcodes">Jumping Over Opcodes</h2>
+<br>
+It is not uncommon for malware to attempt to obfuscate its behavior in various ways to avoid analysis. In this post we will go over
+some common tricks used to confuse static analysis tools from obtaining the correct disassembly of a program.
+<p>A very simple trick is to jump over instructions that we don&rsquo;t want to execute. Obviously this can get more complex, but the concept is simple.</p>
+<pre tabindex="0"><code class="language-assembly" data-lang="assembly">//Compile with gcc trick1.S
+.text
+.global main
+main:
+	jmp L1 + 1
+L1:
+	.byte 0xc3               //Disassembler interprets this as a &#34;ret&#34; when we are really jumping over this (jmp L1 + 1)
+	movq $1, %rax
+
+exit:
+	mov $60, %rax
+	xor %rdi, %rdi
+	syscall                  //Call exit(1)
+</code></pre><p>The disassembly of the binary is shown below (objdump)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#ae81ff">0000000000400487</span> &lt;main&gt;:
+</span></span><span style="display:flex;"><span>  400487:	eb <span style="color:#ae81ff">01</span>                	jmp    40048a &lt;L1+0x1&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">0000000000400489</span> &lt;L1&gt;:
+</span></span><span style="display:flex;"><span>  400489:	c3                   	ret                 //It appears as <span style="color:#66d9ef">if</span> we are returning here, but we never execute this opcode
+</span></span><span style="display:flex;"><span>  40048a:	<span style="color:#ae81ff">48</span> c7 c0 <span style="color:#ae81ff">01</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> 	mov    rax,0x1      //We jump here
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">0000000000400491</span> &lt;exit&gt;:
+</span></span><span style="display:flex;"><span>  400491:	<span style="color:#ae81ff">48</span> c7 c0 3c <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> 	mov    rax,0x3c
+</span></span><span style="display:flex;"><span>  400498:	<span style="color:#ae81ff">48</span> <span style="color:#ae81ff">31</span> ff             	xor    rdi,rdi
+</span></span><span style="display:flex;"><span>  40049b:	0f <span style="color:#ae81ff">05</span>                	syscall
+</span></span><span style="display:flex;"><span>  40049d:	0f 1f <span style="color:#ae81ff">00</span>             	nop    DWORD PTR <span style="color:#f92672">[</span>rax<span style="color:#f92672">]</span>
+</span></span></code></pre></div><p>Some disassemblers can be easily tricked by making the program appear as if it jumps into the middle of an opcode. This has a cascading effect
+of causing the disassembler to misinterpret most of the surrounding code, effectively obfuscating it.</p>
+<h2 id="invalid-opcodes">Invalid Opcodes</h2>
+<br>
+We will use a technique that combines the trick above with an alternative way to jump to code in order to confuse the disassembler.
+  Recall that the "call" instruction pushes the address of the next instruction to the stack then jumps to the location.
+  We can have fun with this by using it to get the current value of RIP, adding some value to it, pushing it to the stack and calling "ret"
+  effectively making a dynamic "jmp" instruction. The disassembler, however, does not really know we are jumping somewhere as it never
+  sees a "jmp" instruction.
+<pre tabindex="0"><code class="language-assembly" data-lang="assembly">call L1+1		//0xe8, 0x01, 0x00, 0x00	[Push RIP of return addr to stack and jump to &#39;pop rax&#39;]
+L1: .byte 0xe9          //0xe9 				[Dummy val to confuse disasm]
+pop rax 		//0x58 				[RIP = addr of this instruction, rax = RIP]
+add rax, 9		//0x48, 0x83, 0xc0, 0x09	[+9 to our jump addr, 9 since prev ins = RIP and target (nop) is +9 ops away]
+push rax		//0x50				[Push our modified ret addr to stack]
+ret			//0xc3				[Pop return addr into RIP (effectively a jmp))]
+.byte 0xe9 		//0xe9				[Trick the disasm again...]
+nop			//0x90				[This is our target, can be anything]
+</code></pre><p>The disassembly is shown below (objdump)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#ae81ff">0000000000400487</span> &lt;main&gt;:
+</span></span><span style="display:flex;"><span>  400487:	<span style="color:#ae81ff">55</span>                   	push   rbp
+</span></span><span style="display:flex;"><span>  400488:	<span style="color:#ae81ff">48</span> <span style="color:#ae81ff">89</span> e5             	mov    rbp,rsp
+</span></span><span style="display:flex;"><span>  40048b:	e8 <span style="color:#ae81ff">01</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>       	call   <span style="color:#ae81ff">400491</span> &lt;L1+0x1&gt;&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">0000000000400490</span> &lt;L1&gt;:
+</span></span><span style="display:flex;"><span>  400490:	e9 <span style="color:#ae81ff">58</span> <span style="color:#ae81ff">48</span> <span style="color:#ae81ff">83</span> c0       	jmp    ffffffffc0c34ced &lt;__TMC_END__+0xffffffffc0633ccd&gt;
+</span></span><span style="display:flex;"><span>  400495:	<span style="color:#ae81ff">09</span> <span style="color:#ae81ff">50</span> c3             	or     DWORD PTR <span style="color:#f92672">[</span>rax-0x3d<span style="color:#f92672">]</span>,edx
+</span></span><span style="display:flex;"><span>  400498:	e9 <span style="color:#ae81ff">90</span> b8 <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>       	jmp    40bd2d &lt;__FRAME_END__+0xb6f9&gt;
+</span></span><span style="display:flex;"><span>  40049d:	<span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>                	add    BYTE PTR <span style="color:#f92672">[</span>rax<span style="color:#f92672">]</span>,al
+</span></span><span style="display:flex;"><span>  40049f:	5d                   	pop    rbp
+</span></span><span style="display:flex;"><span>  4004a0:	c3                   	ret
+</span></span><span style="display:flex;"><span>  4004a1:	<span style="color:#ae81ff">66</span> 2e 0f 1f <span style="color:#ae81ff">84</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> 	nop    WORD PTR cs:<span style="color:#f92672">[</span>rax+rax*1+0x0<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>  4004a8:	<span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span>  4004ab:	0f 1f <span style="color:#ae81ff">44</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>       	nop    DWORD PTR <span style="color:#f92672">[</span>rax+rax*1+0x0<span style="color:#f92672">]</span>
+</span></span></code></pre></div><p>And in Radare2&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#f92672">[</span>0x004003b0<span style="color:#f92672">]</span>&gt; pdf @ main
+</span></span><span style="display:flex;"><span>            ;-- main:
+</span></span><span style="display:flex;"><span>/ <span style="color:#f92672">(</span>fcn<span style="color:#f92672">)</span> main <span style="color:#ae81ff">14</span>
+</span></span><span style="display:flex;"><span>|   main <span style="color:#f92672">()</span>;
+</span></span><span style="display:flex;"><span>|              ; UNKNOWN XREF from 0x0040048b <span style="color:#f92672">(</span>main<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|              ; DATA XREF from 0x004003cd <span style="color:#f92672">(</span>entry0<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>|           0x00400487      <span style="color:#ae81ff">55</span>             push rbp
+</span></span><span style="display:flex;"><span>|           0x00400488      4889e5         mov rbp, rsp
+</span></span><span style="display:flex;"><span>|           0x0040048b      e801000000     call 0x400491
+</span></span><span style="display:flex;"><span>|           ;-- L1:
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">\ </span>      ,<span style="color:#f92672">=</span>&lt; 0x00400490      e9584883c0     jmp 0xffffffffc0c34ced
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>0x004003b0<span style="color:#f92672">]</span>&gt; pd <span style="color:#ae81ff">5</span> @ 0xffffffffc0c34ced
+</span></span><span style="display:flex;"><span>            0xffffffffc0c34ced      ff             invalid
+</span></span><span style="display:flex;"><span>            0xffffffffc0c34cee      ff             invalid
+</span></span><span style="display:flex;"><span>            0xffffffffc0c34cef      ff             invalid
+</span></span><span style="display:flex;"><span>            0xffffffffc0c34cf0      ff             invalid
+</span></span><span style="display:flex;"><span>            0xffffffffc0c34cf1      ff             invalid
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>0x004003b0<span style="color:#f92672">]</span>&gt;
+</span></span></code></pre></div><p>As you can see, the disassembly is quite different from the actual assembly above. Both disassemblers have been confused and our code, obfuscated.</p>
+
+    </article>
+
+    
+    
+    <div class="pagination" style="margin-top:3rem;">
+      <a href="http://localhost:51372/post/simple-elf-crypter/">← Simple ELF Crypter</a>
+      <a href="http://localhost:51372/post/switch-reverse-engineering/">TEG-S18TXE Switch Reverse Engineering →</a>
+    </div>
+    
+  </div>
+
+</div>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <div class="footer-left">
+      <strong>x86sec</strong> — a cybersecurity blog<br>
+      &copy; 2026 Grant Foudree
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/gfoudree" rel="noopener">github</a>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

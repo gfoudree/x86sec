@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Mifare on x86sec</title>
+    <link>http://localhost:51372/tags/mifare/</link>
+    <description>Recent content in Mifare on x86sec</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 20 Feb 2023 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:51372/tags/mifare/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Proxmark3: Crack and Clone Apartment RFID Key Fob</title>
+      <link>http://localhost:51372/post/rfid-hacking-proxmark/</link>
+      <pubDate>Mon, 20 Feb 2023 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/rfid-hacking-proxmark/</guid>
+      <description>&lt;h2 id=&#34;rfid-hacking&#34;&gt;RFID Hacking&lt;/h2&gt;&#xA;&lt;h2 id=&#34;proxmark&#34;&gt;Proxmark&lt;/h2&gt;&#xA;&lt;p&gt;The Proxmark is a neat tool to interact with RFID tags and do things like read, write, clone, simulate, and much more. They are portable and have many many features including the ability to crack authentication keys on tags and sniff RFID transactions.&lt;/p&gt;&#xA;&lt;img src=&#34;http://localhost:51372/proxmark3.webp&#34; alt=&#34;Proxmark3 Easy&#34; style=&#34;width:30%;height:100%&#34;&gt;&#xA;&lt;h3 id=&#34;buying&#34;&gt;Buying&lt;/h3&gt;&#xA;&lt;p&gt;I chose to buy a Chinese clone (Proxmark 3 Easy) from the &amp;ldquo;PiSwords&amp;rdquo; manufacturer on AliExpress. &lt;strong&gt;So far it has worked without any issues&lt;/strong&gt;, and is explicitly claimed to be supported by the &lt;a href=&#34;https://github.com/RfidResearchGroup/proxmark3&#34;&gt;Iceman fork&lt;/a&gt; of the Proxmark firmware. They cost around $40-50 USD on AliExpress/Ebay.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

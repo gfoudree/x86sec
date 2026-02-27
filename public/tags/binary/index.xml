@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Binary on x86sec</title>
+    <link>http://localhost:51372/tags/binary/</link>
+    <description>Recent content in Binary on x86sec</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 22 Feb 2020 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:51372/tags/binary/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Simple ELF Crypter</title>
+      <link>http://localhost:51372/post/simple-elf-crypter/</link>
+      <pubDate>Sat, 22 Feb 2020 00:00:00 +0000</pubDate>
+      <guid>http://localhost:51372/post/simple-elf-crypter/</guid>
+      <description>&lt;h2 id=&#34;elf-files&#34;&gt;ELF Files&lt;/h2&gt;&#xA;&lt;p&gt;There are several techniques that can be used to obsfucate what an executable does at runtime. This post will demonstrate a minimal example of a self-modifying, ELF executable that contains an encrypted section of code that, at runtime, bruteforces its own key and decrypts itself.&lt;/p&gt;&#xA;&lt;h2 id=&#34;elf-sections&#34;&gt;ELF Sections&lt;/h2&gt;&#xA;&lt;p&gt;ELF executables are comprised of several &amp;ldquo;sections&amp;rdquo;. Code that is executed, such as &lt;code&gt;int main()&lt;/code&gt;, is placed inside the &lt;code&gt;.text&lt;/code&gt; section.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

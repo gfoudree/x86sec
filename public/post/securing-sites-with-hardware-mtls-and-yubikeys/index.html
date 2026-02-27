@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51372&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Securing Sites With Hardware MTLS and Yubikeys · x86sec</title>
+
+  <meta name="description" content="Vulnerability research, kernel exploitation, and reverse engineering.">
+  <meta name="author" content="Grant Foudree">
+
+  
+  <meta property="og:title" content="Securing Sites With Hardware MTLS and Yubikeys">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://localhost:51372/post/securing-sites-with-hardware-mtls-and-yubikeys/">
+
+  
+  <link rel="canonical" href="http://localhost:51372/post/securing-sites-with-hardware-mtls-and-yubikeys/">
+  <link rel="alternate" type="application/rss+xml" title="x86sec" href="http://localhost:51372/index.xml">
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/main.css">
+
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body><header class="site-header">
+  <div class="container">
+    <a class="site-logo" href="/" data-text="[x86sec]"><span class="bracket">[</span>x86sec<span class="bracket">]</span></a>
+    <nav class="site-nav">
+      
+      <a href="/"
+         class="active">
+        posts
+      </a>
+      
+      <a href="/about/"
+         class="">
+        about
+      </a>
+      
+    </nav>
+  </div>
+</header>
+<main>
+<div class="container">
+
+  
+  <div class="page-hero">
+    <h1>Securing Sites With Hardware MTLS and Yubikeys</h1>
+    
+    <div class="hero-meta">
+      <span><span class="dot">date</span> November 14, 2024</span>
+      
+      <span><span class="dot">read</span> 5 min</span>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="post-content">
+    <article class="prose">
+      <h2 id="mtls">mTLS</h2>
+<h3 id="overview">Overview</h3>
+<p>In this post, we will deploy mTLS by using Caddy as reverse proxy to force client authentication before accessing sites, and store the client certificates in hardware via Yubikeys.</p>
+<p>TLS is the backbone for securing HTTP traffic and is commonly deployed in a way that authenticates the site only. This is perfectly fine, however sometimes it is useful for the site to also authenticate the user. This is known as &ldquo;mTLS&rdquo; or &ldquo;Mutual TLS&rdquo;.</p>
+<p>You can read more about it <a href="https://www.cloudflare.com/learning/access-management/what-is-mutual-tls/">here</a>, however the jist of it is that there is an additional step in the TLS handshake in which the client presents a certificate which is verified by the server before the session is allowed to be setup.</p>
+<h3 id="uses">Uses</h3>
+<p>Since both parties are authenticated, it can be used to establish bilateral trust in which the client trusts the server, <em>and</em> the server trusts (or authenticates) the client. Authentication is based on strong cryptography (instead of passwords), therefore providing robust security.</p>
+<p>A strong advantage of mTLS is it is &ldquo;simple&rdquo; and takes place before any application-specific logic is run. Vulnerabilities in the web app realistically can&rsquo;t be exploited until after the client is authenticated, providing substantial security.</p>
+<h3 id="drawbacks">Drawbacks</h3>
+<p>Certificate management (issuing, revoking, installing, etc&hellip;) tends to be challenging. Setting up mTLS is more complicated than providing usernames and passwords.</p>
+<p>Stolen certificates are a substantial danger, and we will mitigate this by using a Yubikey below.</p>
+<h2 id="generating-certificates">Generating Certificates</h2>
+<p>Yubikeys have a PIV mode which stores and generates the certificates in hardware. <strong>The private keys do not leave the device</strong> which provides us with strong security.</p>
+<h3 id="yubikey-setup">Yubikey Setup</h3>
+<p>Check that PIV mode is &ldquo;Enabled&rdquo;. If not, you&rsquo;ll need to enable it.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ykman info
+</span></span><span style="display:flex;"><span>Device type: YubiKey <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>Firmware version: 4.3.7
+</span></span><span style="display:flex;"><span>Enabled USB interfaces: OTP, FIDO, CCID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Applications
+</span></span><span style="display:flex;"><span>Yubico OTP  	Enabled
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>PIV         	Enabled
+</span></span></code></pre></div><p><strong>Note:</strong> if you see <code>WARNING: PC/SC not available. Smart card (CCID) protocols will not function.</code>, start the <code>pcscd</code> service on your device which allows communication with the smart card.</p>
+<p>Next, you should change the PIN and PUK (PIN unlock key) on the device. This PIN is required to &ldquo;unlock&rdquo; the device at which point the certificates can be used. Should someone steal your Yubikey, the PIN is what protects your private key from being used (it still can&rsquo;t be copied off).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ykman piv access change-pin --pin <span style="color:#ae81ff">123456</span> --new-pin &lt;new PIN&gt;
+</span></span><span style="display:flex;"><span>$ ykman piv access change-puk --puk <span style="color:#ae81ff">12345678</span> --new-puk &lt;new PUK&gt;
+</span></span></code></pre></div><h3 id="certificate-authority-setup">Certificate Authority Setup</h3>
+<p>Next, we need to create a certificate authority. This is necessary because Caddy needs to know what client certificates are valid by checking if they are signed by the CA it is instructed to trust. We will sign the Yubikey client keys with this CA.</p>
+<p><strong>IMPORTANT:</strong> Carefully consider that anyone with this CA private key can sign any key, and it will be valid for client authentication! Guard it carefully! The PEM pass phrase will be used to encrypt the private key for storage.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ openssl genpkey -algorithm ed25519 -out ca-key.pem -aes256
+</span></span><span style="display:flex;"><span>$ openssl req -new -x509 -days <span style="color:#ae81ff">3650</span> -key ca-key.pem -out ca-cert.pem
+</span></span></code></pre></div><h3 id="generate-client-key">Generate Client Key</h3>
+<p>With the CA set up, let&rsquo;s generate the client certificate <em>in hardware</em> on the Yubikey. Slot &ldquo;9A&rdquo; is used to store authentication keys.</p>
+<p>My Yubikey and firmware version only supports up to ECC-384 keys, however if yours allows X25519, use that instead.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ykman piv keys generate --algorithm ECCP384 9a pubkey.pem
+</span></span><span style="display:flex;"><span>Enter a management key <span style="color:#f92672">[</span>blank to use default key<span style="color:#f92672">]</span>:
+</span></span><span style="display:flex;"><span>Private key generated in slot 9A <span style="color:#f92672">(</span>AUTHENTICATION<span style="color:#f92672">)</span>, public key written to pubkey.pem.
+</span></span></code></pre></div><p>Generate a CSR, keeping the private key on the Yubikey:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ykman piv certificates request --subject <span style="color:#e6db74">&#34;CN=alice&#34;</span> 9a pubkey.pem user.csr
+</span></span><span style="display:flex;"><span>Enter PIN:
+</span></span><span style="display:flex;"><span>CSR <span style="color:#66d9ef">for</span> slot 9A <span style="color:#f92672">(</span>AUTHENTICATION<span style="color:#f92672">)</span> written to user.csr.
+</span></span></code></pre></div><p>Sign the CSR with the CA and generate a valid certificate for the user:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ openssl x509 -days <span style="color:#ae81ff">3650</span> -req -in user.csr -CA ca-cert.pem -CAkey ca-key.pem -out user-cert.pem -CAcreateserial
+</span></span><span style="display:flex;"><span>Certificate request self-signature ok
+</span></span><span style="display:flex;"><span>subject<span style="color:#f92672">=</span>CN<span style="color:#f92672">=</span>alice
+</span></span><span style="display:flex;"><span>Enter pass phrase <span style="color:#66d9ef">for</span> ca-key.pem:
+</span></span></code></pre></div><p>Finally, load this certificate onto the Yubikey:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ykman piv certificates import 9a user-cert.pem
+</span></span><span style="display:flex;"><span>Enter a management key <span style="color:#f92672">[</span>blank to use default key<span style="color:#f92672">]</span>:
+</span></span><span style="display:flex;"><span>Certificate imported into slot AUTHENTICATION
+</span></span></code></pre></div><p>We can inspect the certificate and make sure it&rsquo;s also valid:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ykman piv certificates export 9a - | openssl x509 -text -noout
+</span></span><span style="display:flex;"><span>Certificate:
+</span></span><span style="display:flex;"><span>    Data:
+</span></span><span style="display:flex;"><span>        Version: <span style="color:#ae81ff">3</span> <span style="color:#f92672">(</span>0x2<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        Serial Number:
+</span></span><span style="display:flex;"><span>            45:26:4b:32:89:67:47:a4:c0:c4:d4:c4:55:ab:99:ed:58:34:93:45
+</span></span><span style="display:flex;"><span>        Signature Algorithm: ED25519
+</span></span><span style="display:flex;"><span>        Issuer: C<span style="color:#f92672">=</span>US, ST<span style="color:#f92672">=</span>IL, L<span style="color:#f92672">=</span>Chicago, O<span style="color:#f92672">=</span>Internet Widgits Pty Ltd
+</span></span><span style="display:flex;"><span>        Validity
+</span></span><span style="display:flex;"><span>            Not Before: Nov <span style="color:#ae81ff">17</span> 20:31:25 <span style="color:#ae81ff">2024</span> GMT
+</span></span><span style="display:flex;"><span>            Not After : Nov <span style="color:#ae81ff">15</span> 20:31:25 <span style="color:#ae81ff">2034</span> GMT
+</span></span><span style="display:flex;"><span>        Subject: CN<span style="color:#f92672">=</span>alice
+</span></span><span style="display:flex;"><span>        Subject Public Key Info:
+</span></span><span style="display:flex;"><span>            Public Key Algorithm: id-ecPublicKey
+</span></span><span style="display:flex;"><span>                Public-Key: <span style="color:#f92672">(</span><span style="color:#ae81ff">384</span> bit<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>                pub:
+</span></span><span style="display:flex;"><span>                    04:72:76:7c:40:93:6e:27:80:28:34:4a:be:89:30:
+</span></span><span style="display:flex;"><span>                    28:a0:8e:45:82:34:0f:c7:1c:94:fe:d8:5d:21:fa:
+</span></span><span style="display:flex;"><span>                    a1:6f:79:24:6f:52:00:22:b6:d3:ee:cc:c0:af:2f:
+</span></span><span style="display:flex;"><span>                    ae:2c:49:4b:15:8b:65:1d:14:e6:ed:73:2a:5a:59:
+</span></span><span style="display:flex;"><span>                    b9:e3:11:2c:87:f4:36:7d:37:08:c2:8c:49:9c:9f:
+</span></span><span style="display:flex;"><span>                    21:e5:d0:55:3c:5d:a3:2b:fc:4e:f2:61:fc:e3:b4:
+</span></span><span style="display:flex;"><span>                    ee:cf:b2:47:5a:a7:20
+</span></span><span style="display:flex;"><span>                ASN1 OID: secp384r1
+</span></span><span style="display:flex;"><span>                NIST CURVE: P-384
+</span></span><span style="display:flex;"><span>        X509v3 extensions:
+</span></span><span style="display:flex;"><span>            X509v3 Subject Key Identifier:
+</span></span><span style="display:flex;"><span>                82:2C:88:1C:D6:1E:43:19:B7:D2:9C:D8:DC:00:FB:2B:F8:C8:07:15
+</span></span><span style="display:flex;"><span>            X509v3 Authority Key Identifier:
+</span></span><span style="display:flex;"><span>                F8:D7:EB:D1:20:6C:73:96:B1:0B:7F:7F:70:C5:AC:31:0F:72:42:8D
+</span></span><span style="display:flex;"><span>    Signature Algorithm: ED25519
+</span></span><span style="display:flex;"><span>    Signature Value:
+</span></span><span style="display:flex;"><span>        5d:62:f3:9c:12:34:f9:86:ac:a1:67:ad:32:9a:17:fe:84:0e:
+</span></span><span style="display:flex;"><span>        a5:31:16:b4:f2:42:c4:11:07:75:91:d6:18:ff:f5:8d:bd:d1:
+</span></span><span style="display:flex;"><span>        9c:be:fc:02:a1:b5:01:8f:a8:9c:2c:a3:18:d0:5c:ba:5f:44:
+</span></span><span style="display:flex;"><span>        c4:23:24:53:11:24:f2:de:20:04
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ykman piv certificates export 9a - | openssl verify -CAfile ca-cert.pem
+</span></span><span style="display:flex;"><span>stdin: OK
+</span></span></code></pre></div><h2 id="setting-up-caddy">Setting Up Caddy</h2>
+<p>Phew, the certificates are out of the way, now let&rsquo;s setup Caddy as a reverse proxy to protect our sites.</p>
+<p>Below is a <code>Caddyfile</code> which uses <code>ca-cert.pem</code> as the CA certificate (public key) to validate all mTLS authentication by clients. It then sets up a reverse-proxy for <code>mysite.com</code> and proxies it to <code>10.0.0.1:8000</code>.</p>
+<p><strong>Note:</strong> be sure to firewall or block all connections on 10.0.0.1 that are not from the reverse proxy, otherwise a user can connect directly and bypass client authentication!</p>
+<pre tabindex="0"><code>(mtls) {
+        tls {
+                client_auth {
+                        mode require_and_verify
+                        trusted_ca_cert_file ./ca-cert.pem
+                }
+        }
+}
+mysite.com {
+	import mtls
+	reverse_proxy 10.0.0.1:8000
+}
+</code></pre><h2 id="testing">Testing</h2>
+<p>You must load the smart card from your browser to use its certificates. In Firefox, navigate to  Settings -&gt; Privacy &amp; Security -&gt; Security Devices -&gt; Load.</p>
+<p>Insert the path to the OpenSC PKCS11 module for your machine (you might need to install OpenSC first):</p>
+<p><img src="/firefox_load_smartcard.webp" alt="firefox_smart_card"></p>
+<p>Afterwards the Yubikey should appear:</p>
+<p><img src="/firefox_yubikey.webp" alt="firefox_yubikey"></p>
+<p>Press &ldquo;Log In&rdquo; and enter your PIN to unlock the smart card.</p>
+<p>Finally, load the site and voila you are prompted for the certificate on your Yubikey and are successfully authenticated!</p>
+<p><img src="/mtls_cert_prompt.webp" alt="cert_prompt"></p>
+
+    </article>
+
+    
+    
+    <div class="pagination" style="margin-top:3rem;">
+      <span></span>
+      <a href="http://localhost:51372/post/flashing-ipxe-to-tenda-gigabit-nic/">Reverse Engineering and Flashing iPXE to Tenda Gigabit NIC →</a>
+    </div>
+    
+  </div>
+
+</div>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <div class="footer-left">
+      <strong>x86sec</strong> — a cybersecurity blog<br>
+      &copy; 2026 Grant Foudree
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/gfoudree" rel="noopener">github</a>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{{ define "main" }}
+<div class="container">
+  <div class="page-hero">
+    <div class="hero-label">{{ .Kind }}</div>
+    <h1>{{ .Title }}</h1>
+    {{ with .Params.description }}<p style="color:var(--text-dim);margin-top:.75rem;font-size:.9rem;">{{ . }}</p>{{ end }}
+  </div>
+
+  <section class="post-list">
+    <div class="section-header">{{ len .Pages }} entries</div>
+
+    {{ range .Pages.ByDate.Reverse }}
+    <a class="post-item" href="{{ .Permalink }}">
+      <span class="post-date">{{ .Date.Format "2006-01-02" }}</span>
+      <div class="post-info">
+        <div class="post-title">{{ .Title }}</div>
+        {{ with .Summary }}<div class="post-summary">{{ . | plainify | truncate 130 }}</div>{{ end }}
+      </div>
+      <div class="post-tags">
+        {{ range first 3 .Params.tags }}<span class="tag">{{ . }}</span>{{ end }}
+      </div>
+    </a>
+    {{ end }}
+  </section>
+</div>
+{{ end }}

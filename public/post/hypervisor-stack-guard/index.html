@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51372&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StackSupervisor - a Hypervisor-based Stack Guard · x86sec</title>
+
+  <meta name="description" content="Vulnerability research, kernel exploitation, and reverse engineering.">
+  <meta name="author" content="Grant Foudree">
+
+  
+  <meta property="og:title" content="StackSupervisor - a Hypervisor-based Stack Guard">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://localhost:51372/post/hypervisor-stack-guard/">
+
+  
+  <link rel="canonical" href="http://localhost:51372/post/hypervisor-stack-guard/">
+  <link rel="alternate" type="application/rss+xml" title="x86sec" href="http://localhost:51372/index.xml">
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/main.css">
+
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body><header class="site-header">
+  <div class="container">
+    <a class="site-logo" href="/" data-text="[x86sec]"><span class="bracket">[</span>x86sec<span class="bracket">]</span></a>
+    <nav class="site-nav">
+      
+      <a href="/"
+         class="active">
+        posts
+      </a>
+      
+      <a href="/about/"
+         class="">
+        about
+      </a>
+      
+    </nav>
+  </div>
+</header>
+<main>
+<div class="container">
+
+  
+  <div class="page-hero">
+    <h1>StackSupervisor - a Hypervisor-based Stack Guard</h1>
+    
+    <div class="hero-meta">
+      <span><span class="dot">date</span> March 3, 2020</span>
+      
+      <span><span class="dot">read</span> 13 min</span>
+      
+      <span>
+        
+        <a href="/tags/hypervisor" class="tag">hypervisor</a>
+        
+        <a href="/tags/stack-smashing" class="tag">stack-smashing</a>
+        
+        <a href="/tags/buffer-overflow" class="tag">buffer overflow</a>
+        
+        <a href="/tags/security" class="tag">security</a>
+        
+        <a href="/tags/kernel" class="tag">kernel</a>
+        
+        <a href="/tags/linux" class="tag">linux</a>
+        
+      </span>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="post-content">
+    <article class="prose">
+      <h2 id="buffer-overflows">Buffer Overflows</h2>
+<p>Stack-based buffer overflow attacks have been
+around for some time and have been a popular technique for exploiting software. As a result, several mitigation techniques have been proposed and implemented, however none solve the problem completely. This post will demonstrate a new way to detect and protect against kernel-based buffer overflow attacks in guest operating systems using the KVM hypervisor.</p>
+<h2 id="some-existing-stack-smashing-protections">(Some) Existing Stack Smashing Protections</h2>
+<h3 id="dep-or-wx-memory">DEP or W^X Memory</h3>
+<p>Data execution protection (DEP) and Write XOR Execute Memory
+are the same technique that states that regions of the
+executable can be marked as write or executable, but
+not both. From a security standpoint, you don’t want
+to have regions that can be written to also as marked
+as executable. W^X Memory acts as a prevention technique for attackers who inject shellcode
+into the stack and attempt to execute it.</p>
+<p>The issue with W^X memory is that it does not
+prevent return-oriented programming techniques to achieve
+arbitrary code execution after a successful stack smashing
+attack. Therefore, this technique by itself is not a sufficient
+protection.</p>
+<!---
+#### Return-oriented programming (ROP)
+Return-oriented programming, or ROP, is a circumvention technique to the
+W^X memory protection. The main concept behind ROP is that instead of loading your shellcode onto the stack and
+then returning to it, you reuse code (gadgets) that already
+exist inside the binary in a series of return chains. Since
+the stack is no longer executable, shellcode you load into it
+cannot be returned to and executed, but all the remaining
+code inside the compiled binary is fair game since it is
+marked as executable. In order to leverage ROP, an attacker
+must assemble a series of gadgets from inside the binary.
+The criteria for a gadget is that there must be a series of
+desirable instructions that end with a RET instruction. By
+searching the binary, one can dump various gadgets and
+order them in a way to complete the desired operation.
+The larger the binary is, the more likely an attacker can
+construct a series of gadgets to achieve their goal. Once
+they have identified the memory regions of their gadgets,
+an attacker overflows the buffer of a vulnerable program,
+placing the memory addresses of the gadgets to execute in
+reverse order with the first one in the overflowed return
+addresses’ spot on the stack. Upon function return, this
+chain will be activated and one by one the gadgets will be
+executed, each returning to the next in line.
+
+For example, suppose an attacker wanted to invoke
+the syscall exit as their exploit to a vulnerable program.
+After searching through the program’s binary code, the
+following gadgets were extracted:
+
+```bash
+0x4004d0: xor %eax, %eax
+          ret
+0x400100: int $0x80
+          ret
+0x4FFFFF: inc %eax
+          ret
+```
+
+In order to call `exit(2)` in 32-bit Linux, the exit code goes
+in the EBX register, EAX must be set to 1 for syscall 1
+(`exit(2)`), and then interrupt 0x80 fired. Using the above
+gadgets, we can achieve this by executing the gadgets in
+the following order: `0x4004d0`, `0x4FFFFF`, `0x400100`. To
+do this with our stack overflow, we simply need to place
+the address of the first gadget (`0x4004d0`) in the original
+function’s return address location, followed by `0x4FFFFF`
+and `0x400100`.
+
+#### Ret2LibC:
+Another technique to circumvent W^X memory is called Ret2LibC and it is similar to ROP
+in the sense you are reusing code (libc) to circumvent
+the non-executable stack permissions. Like a standard
+stack-smashing attack, you need to overflow the buffer and modify the return address. However instead of setting the
+return address to your shellcode on the stack, you point it to
+an existing function from libc that has been compiled into
+the program such as `system(3)`. On 32-bit Linux, parameters
+are passed on the stack - which the attacker controls now.
+Combining these concepts, an input can be crafted to a
+vulnerable program to pass in a command that can be
+executed by `system(3)`.
+-->
+<h3 id="stack-canaries">Stack Canaries</h3>
+<p>Stack canaries are a popular technique that involves placing a canary value on the stack right before the return
+address. The idea is that if a buffer is overrun, given the
+order of the stack, a canary placed between the local variables
+and the return address will get overwritten before the return
+address. If we check if the canary has been modified before
+returning from a function, we can infer whether or not a
+buffer has been overrun and the return address modified.</p>
+<img src="/stack-canary.webp" width="50%"/>
+<p>Canaries are effective if chosen to be a random value and
+the program itself does not have a vulnerability in which
+the canary value can be leaked. If this is not the case, an
+attacker can simply insert the proper canary (after leaking the
+value via a side-channel) in their exploit string in the proper
+location as to overflow the buffer, write the exact same canary
+value back, followed by the malicious return address. In
+addition, stack canaries introduce some additional overhead
+in functions due to the checking of the canary value upon
+the function returning. For these reasons, stack canaries are good but not entirely perfect.</p>
+<h3 id="aslr">ASLR</h3>
+<p>In order to combat the predictable nature of memory addresses in a program, ASLR was introduced. ASLR stands
+for address space layout randomization, and essentially
+randomizes the addresses of various regions inside of an
+executable. Specifically, ASLR randomizes the address of
+the stack and heap when the program is loaded, causing
+significant uncertainty when performing a stacking smashing
+attack as the return address to which the attacker’s shellcode
+exists at changes every execution with high entropy. In
+addition to the stack being randomized, other regions such
+as the code and dynamic libraries section can be randomized
+as well. This makes assembling gadgets for a ROP attack complicated due to the shifting of addresses upon each execution.</p>
+<p>ASLR has some weaknesses and, like stack canaries,
+if some sort of information leak exists in the program the
+addresses of the stack and heap can be leaked and used
+by the attacker to discover the proper return address for
+their shellcode. Furthermore, some programs that run in a loop without restarting can end up allowing ASLR to be brute-forced
+as the randomization occurs when a new process is created.</p>
+<h2 id="hypervisors">Hypervisors</h2>
+<h2 id="x86-privilege-rings">X86 Privilege Rings</h2>
+<p>Different regions of memory on an X86 machine execute
+with varying levels of privileges. To denote this, the concept
+of ”ring versions” is used, with a lower ring indicating a
+higher privilege level. For example, an operating system
+kernel typically runs at a higher privilege level (ring 0) than
+a program running in user-mode inside of that operating
+system (ring 3). This concept is important to security as it
+prevents user-mode applications from reading and writing to
+kernel memory regions and executing privileged instructions.
+If this was allowed, user-mode code could escalate privileges
+to ring 0 or tamper with privileged memory with disastrous effects.</p>
+<p>In order for a hypervisor to isolate and manage guest operating systems, naturally it has to be at a higher privilege level
+than the guests it is virtualizing. In the diagram below, you can see that hypervisors run at ring -1. This will be leveraged
+to protect our guest kernel from exploitation as the supervisor code is protected from the OS and has full insight into it. This sort of technique
+is also used for <a href="https://en.wikipedia.org/wiki/Virtual_machine_introspection">virtual machine introspection</a> which is a more expansive way
+of monitoring a guest for intrusions and rootkit behavior such as IDT/SSDT hooking.</p>
+<br>
+<br>
+<img src="/cpu-rings.webp" width="50%" />
+<h2 id="vt-xamd-v">VT-x/AMD-V</h2>
+<p>VT-x is Intel’s technology that allows an unmodified guest operating system to run directly on the CPU without emulation, while providing isolation and protection.</p>
+<p>When VT-x is being used, there are two modes
+the processor can be in, root mode and non-root mode. Root
+mode corresponds to the privileged level the virtual machine
+monitor (VMM/hypervisor) is running at, and the non-root mode
+(non-privileged level) is what the guest operating system is
+executing at.</p>
+<p>The following steps and figure 4 roughly outline the
+life cycle of a hardware virtual machine (HVM) using VT-x:</p>
+<ol>
+<li>Enable VMX in the CR4 register</li>
+<li>Initalize VMCS region and run VMXON</li>
+<li>Write VMCS fields with VMWRITE</li>
+<li>Start guest with VMLAUNCH</li>
+<li>Continue guest execution until it exits to VMM</li>
+<li>Read reason from VMCS via VMREAD</li>
+<li>Resume execution via VMRESUME or terminate via VMXOFF</li>
+</ol>
+<p>In order to maintain the isolation of the guest operating
+system, various instructions are not allowed to be executed
+by the guest directly. Examples of this are <a href="https://github.com/LordNoteworthy/cpu-internals">reading or writing
+the paging registers (CR0, CR3), port I/O instructions
+(IN/OUT), modifying the IDT and GDT, reading the CPU
+timer, external interrupts, reading unauthorized memory
+locations, and tamping with the VMX instructions</a>.
+When the guest operating system decides it would like to
+perform one of these privileged instructions, it exits into the
+hypervisor who emulates the instruction carefully and safely
+before returning execution to the guest operating system.</p>
+<p>Another concern for guest isolation is direct memory
+access (DMA). To combat this, Intel accompanied VT-x
+with another technology VT-d, or IOMMU, which is another
+technology that prevents memory permissions from being
+circumvented via DMA. VT-d can be configured to restrict
+which memory regions can be accessed via DMA to prevent malicious behavior.</p>
+<h2 id="hypercalls">Hypercalls</h2>
+<p>Similar to how userspace programs can execute a
+<code>syscall(2)</code> to change privilege level and invoke the kernel
+by trapping into it, guest operating systems can do the
+same to their hypervisor via a hypercall. This mechanism
+is used across several hypervisors such as KVM, XEN, and Hyper-V. Each hypervisor has their own
+set of hypercalls that they support, making the interfaces
+non-portable across different platforms. The corresponding
+X86 instruction to invoke a hypercall is <code>VMCALL</code> and
+can be invoked from the guest operating system kernel or
+userspace, trapping into the hypervisor when executed. In
+KVM, hypercalls are managed inside the function <code>int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)</code> in the file <code>arch/x86/kvm/x86.c</code>. The calling convention involves placing the hypercall number inside of the EAX reg-
+ister. Definitions of the hypercall numbers KVM supports are
+contained in the header file <code>include/uapi/linux/kvm_para.h</code>.
+There are alternative methods for the guest to transmit
+information to the hypervisor such as memory-mapped IO
+(MMIO) and port-mapped IO (PIO), but we&rsquo;ll stick with hypercalls due to the simplicity and ease of use.</p>
+<h2 id="vmentervmexit">VMENTER/VMEXIT</h2>
+<p>VMENTER and VMEXIT corresponds to when the CPU
+switches from non-root to root mode, or in and out of the
+guest operating system. This can occur for many reasons
+besides a hypercall. Privileged instructions such as the ones
+outlined above in the VT-x section, as well as many other
+reasons, can cause a VMEXIT to the hypervisor.
+Since it is in the best interest of the VMM to maintain
+isolation of the guest, these instructions are trapped and
+then emulated by the the VMM. The hypervisor can also
+configure some of the instructions that are privileged that it
+wants to allow the guest operating system to execute via the
+<a href="https://github.com/LordNoteworthy/cpu-internals/blob/master/VMCS-Layout.pdf">VMCS fields</a>. It is also part of the normal execution
+process for the VMX preemption timer to expire and fire
+a VMEXIT back into the VMM so that virtual machines
+can be scheduled. Unfortunately these VMEXIT/VMEMTER
+operations are costly and are similar to a context switch by
+the kernel when compared to user-mode binaries. When a
+VMEXIT occurs, the CPU has to store all of the current
+registers into the VMCS, as well as the reason for why the
+exit occurred. One <a href="https://www.anandtech.com/show/2480/9">benchmark at AnandTech</a> shows that
+the round-trip time for a VMCALL to VMRESUME can
+average about 400ns on a modern processor.</p>
+<img src="/vt-x.webp" width="60%" />
+<h2 id="solution">Solution</h2>
+<p>In order to create a robust solution to the stack smashing
+problem, we will leverage the higher privilege level
+of a hypervisor to monitor the stack frame for overflows
+in select functions during kernel execution. Since the
+hypervisor has complete control over the guest operating
+system, it is able to inspect all of its memory including
+the stack. By instructing the protected program to notify
+the hypervisor of a function enter/exit, the hypervisor
+can inspect/record the stack after entering then validate
+the return address before exit. Additionally, this allows
+the hypervisor to not only detect that a stack smash has
+occurred, but also replace the proper return address on the
+stack and heal the program without having it crash.
+To do this, we will use a LLVM-pass to insert
+the following assembly stub before the RET instruction
+and immediately after the stack frame has been setup in
+every function.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mov $0xb, %eax
+</span></span><span style="display:flex;"><span>mov $0x1, %ebx
+</span></span><span style="display:flex;"><span>vmcall ;0x2 <span style="color:#66d9ef">for</span> <span style="color:#66d9ef">function</span> exit
+</span></span></code></pre></div><p>In the above snippet, the first line loads in our custom
+hypercall number 0xB into the EAX register. The second
+line denotes that we are entering a function (this stub would
+go at the beginning of a function) by loading 0x1 into the
+EBX register. The value 0x1 would be substituted with
+0x2 at the end of a function to signify the end of a call.
+Finally, the last line invokes the hypercall and traps into the
+hypervisor where we handle the request.</p>
+<p>LLVM-passes provide the ability to register callbacks
+during program compilation with LLVM which allow the
+modification of the generated code. By registering a callback
+for each function in the source code, we can traverse the
+instructions inside and insert our stub in the proper location.
+In order to prevent all functions from being guarded for performance reasons, we can use an attribute that can be set on functions to be protected.</p>
+<p>Let&rsquo;s see an example of how this works given the following vulnerable C program:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#a6e22e">__attribute__</span>((<span style="color:#a6e22e">annotate</span>(<span style="color:#e6db74">&#34;StackSupervisor&#34;</span>))) <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">char</span> buf[<span style="color:#ae81ff">10</span>];
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">gets</span>(buf);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Compiled to assembly, we have the following before the
+LLVM-pass:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>00000000004004d0 &lt;main&gt;:
+</span></span><span style="display:flex;"><span>    4004d0: push %rbp
+</span></span><span style="display:flex;"><span>    4004d1: mov %rsp,%rbp
+</span></span><span style="display:flex;"><span>    4004d4: sub $0x10,%rsp
+</span></span><span style="display:flex;"><span>    4004d8: lea -0xa<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>,%rdi
+</span></span><span style="display:flex;"><span>    4004dc: mov $0x0,%al
+</span></span><span style="display:flex;"><span>    4004de: callq 4003d0 &lt;gets@plt&gt;
+</span></span><span style="display:flex;"><span>    4004e3: xor %ecx,%ecx
+</span></span><span style="display:flex;"><span>    4004e5: mov %eax,-0x10<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    4004e8: mov %ecx,%eax
+</span></span><span style="display:flex;"><span>    4004ea: add $0x10,%rsp
+</span></span><span style="display:flex;"><span>    4004ee: pop %rbp
+</span></span><span style="display:flex;"><span>    4004ef: retq
+</span></span></code></pre></div><p>After the LLVM-pass with our inserted guard code:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>00000000004004d0 &lt;main&gt;:
+</span></span><span style="display:flex;"><span>    4004d0: push %rbp
+</span></span><span style="display:flex;"><span>    4004d1: mov %rsp,%rbp
+</span></span><span style="display:flex;"><span>    4004d4: sub $0x10,%rsp
+</span></span><span style="display:flex;"><span>    4004d8: mov $0xb,%eax           <span style="color:#75715e"># Our custom hypercall no. (0xb)</span>
+</span></span><span style="display:flex;"><span>    4004dd: mov $0x1,%ebx           <span style="color:#75715e"># Hypercall param 0x1 = record</span>
+</span></span><span style="display:flex;"><span>    4004e2: vmcall                  <span style="color:#75715e"># Invoke hypercall</span>
+</span></span><span style="display:flex;"><span>    4004e5: lea -0xa<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>,%rdi
+</span></span><span style="display:flex;"><span>    4004e9: mov $0x0,%al
+</span></span><span style="display:flex;"><span>    4004eb: callq 4003d0 &lt;gets@plt&gt;
+</span></span><span style="display:flex;"><span>    4004f0: mov $0xb,%eax           <span style="color:#75715e"># Our custom hypercall no. (0xb)</span>
+</span></span><span style="display:flex;"><span>    4004f5: mov $0x2,%ebx           <span style="color:#75715e"># Hypercall param 0x2 = check</span>
+</span></span><span style="display:flex;"><span>    4004fa: vmcall                  <span style="color:#75715e"># Invoke hypercall</span>
+</span></span><span style="display:flex;"><span>    4004fd: xor %ecx,%ecx
+</span></span><span style="display:flex;"><span>    4004ff: mov %eax,-0x10<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    400502: mov %ecx,%eax
+</span></span><span style="display:flex;"><span>    400504: add $0x10,%rsp
+</span></span><span style="display:flex;"><span>    400508: pop %rbp
+</span></span><span style="display:flex;"><span>    400509: retq
+</span></span></code></pre></div><p>We can see that two stubs have been inserted at the
+beginning and end of the function. Prior to returning from <code>main()</code>, we
+have a check to see if the return address on the stack has
+been corrupted before jumping to it. At both of the <code>VMCALL</code>
+instructions, the code traps into our KVM hypercall
+interface and we can use various routines inside KVM to
+inspect the guest’s state. To read the registers, we can invoke
+the KVM function</p>
+<p><code>long kvm_register_read(struct kvm_vcpu *vcpu, enum kvm_reg reg)</code></p>
+<p>To read the guest memory (such as the stack), we can call</p>
+<p><code>int kvm_vcpu_read_guest(struct kvm_vcpu *vcpu, gpa_t gpa, void *data, unsigned long len);</code></p>
+<p>Armed with the values of the ESP register which points
+to the stack and the EBP register which points to the base of
+the stack, we can then load this address range into the KVM
+function <code>kvm_vcpu_read_guest()</code> and read the guest’s stack.
+Computing the return address on 32-bit programs is easy
+and is at <code>ebp - 4</code>. Using this, we can read out the stack as
+soon as a function as entered, extract the return address
+and keep a copy of it. On the subsequent exit before the <code>RET</code>
+instruction, we will trap back into our hypercall and do the
+same process, comparing the return addresses. If they differ,
+we can choose to kill the guest OS, generate some sort of
+alert, or attempt to heal the stack by replacing the original
+return address onto the stack and resuming execution. In
+order to keep track of recursive or nested function calls,
+a stack data structure can be used with each function call
+resulting in the hypervisor extracting the return address and
+storing it on a stack. Subsequent returns would pop off the
+appropriate return address for comparison in a LIFO manner.</p>
+<!--
+## Porting to Userspace Code
+
+<br>
+As described thus far, StackSupervisor’s protection
+applies to a guest operating system running in kernel mode.
+With some additional work, however, this technology could
+be extended to user-space programs as well if necessary.
+The primary issue in doing this is that this would likely
+be highly dependent on the guest operating system. Since
+the hypervisor does not really have a concept of processes
+running inside of the guest, a bridge of some sort would
+have to be built between the guest kernel and the hypervisor.
+One solution that would work with the Linux operating
+system is as follows:
+
+1. Instrument user-mode binary with a similar LLVM-
+pass that inserts a syscall() to a custom syscall in the
+kernel
+2. The custom syscall then records the PID of the process
+into a CPU register then invokes a custom hypercall
+via vmcall
+3. Hypervisor records the stack similar to how it does for
+kernel-mode protection, pairing the return address with
+the PID communicated from the guest kernel
+4. Upon function exit, the same process is followed
+syscalling into the kernel, passing the PID into the
+hypervisor who then performs the check based on the
+PID
+5. If the return address differs, the OS can be informed
+to kill the process or simply alert on the overflow
+-->
+<h2 id="demo">Demo</h2>
+<p>Let&rsquo;s test StackSupervisor with a simple buffer overflow bug in a very simple 32-bit kernel. We will <code>memcpy()</code> a large number of &lsquo;a&rsquo;s to overrun a buffer and check that StackSupervisor can detect it.</p>
+<p>First let&rsquo;s test a normal function call without an overflow:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Stackguard Function Enter
+</span></span><span style="display:flex;"><span>RIP<span style="color:#f92672">=</span>0x100313 RSP<span style="color:#f92672">=</span>0x104fd0 RBP<span style="color:#f92672">=</span>0x104fe8
+</span></span><span style="display:flex;"><span>Return address: 0x100389
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Stack Dump:
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">20</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">07</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> CF <span style="color:#ae81ff">07</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">50</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">19</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">08</span> <span style="color:#ae81ff">50</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">89</span> <span style="color:#ae81ff">03</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Stackguard Function Exit
+</span></span><span style="display:flex;"><span>RIP<span style="color:#f92672">=</span>0x100343 RSP<span style="color:#f92672">=</span>0x104fd0 RBP<span style="color:#f92672">=</span>0x104fe8
+</span></span><span style="display:flex;"><span>Return address: 0x100389
+</span></span><span style="display:flex;"><span>Ret addr OK!
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Stack Dump:
+</span></span><span style="display:flex;"><span>FC <span style="color:#ae81ff">03</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">15</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">07</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> CF <span style="color:#ae81ff">07</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span>FC <span style="color:#ae81ff">03</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">08</span> <span style="color:#ae81ff">50</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">89</span> <span style="color:#ae81ff">03</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span>
+</span></span></code></pre></div><p>As we can see, the return address (0x100389) is not modified. Now let&rsquo;s call our function that overflows our buffer:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Stackguard Function Enter
+</span></span><span style="display:flex;"><span>RIP<span style="color:#f92672">=</span>0x1003c0 RSP<span style="color:#f92672">=</span>0x104fe0 RBP<span style="color:#f92672">=</span>0x104fe8
+</span></span><span style="display:flex;"><span>Return address: 0x100396
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Stack Dump:
+</span></span><span style="display:flex;"><span>3C <span style="color:#ae81ff">19</span> <span style="color:#ae81ff">36</span> FE <span style="color:#ae81ff">07</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">08</span> <span style="color:#ae81ff">50</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">96</span> <span style="color:#ae81ff">03</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span>FC <span style="color:#ae81ff">03</span> <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Stackguard Function Exit
+</span></span><span style="display:flex;"><span>RIP<span style="color:#f92672">=</span>0x1003f4 RSP<span style="color:#f92672">=</span>0x104fe0 RBP<span style="color:#f92672">=</span>0x104fe8
+</span></span><span style="display:flex;"><span>Return address: 0xffffffffaaaaaaaa
+</span></span><span style="display:flex;"><span>Return address not equal!!
+</span></span><span style="display:flex;"><span>0x100396 !<span style="color:#f92672">=</span> 0xffffffffaaaaaaaa
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span>Stack Dump:
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">14</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">07</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> AA
+</span></span><span style="display:flex;"><span>AA AA AA AA AA AA AA AA
+</span></span><span style="display:flex;"><span>AA AA AA AA AA AA AA AA
+</span></span><span style="display:flex;"><span>AA AA AA <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span> <span style="color:#ae81ff">00</span>
+</span></span></code></pre></div><p>Looking at dmesg for StackSupervisors output, we observe that a stack corruption has occured.</p>
+<p>This is additionally evident by QEMU crashing and we can see that the EIP register has been overwritten with &lsquo;aaaaaaaa&rsquo;.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>KVM internal error. Suberror: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>emulation failure
+</span></span><span style="display:flex;"><span>EAX<span style="color:#f92672">=</span><span style="color:#ae81ff">00000000</span> EBX<span style="color:#f92672">=</span><span style="color:#ae81ff">00000002</span> ECX<span style="color:#f92672">=</span>000b8000
+</span></span><span style="display:flex;"><span>EDX<span style="color:#f92672">=</span><span style="color:#ae81ff">00000007</span> ESI<span style="color:#f92672">=</span><span style="color:#ae81ff">00000000</span> EDI<span style="color:#f92672">=</span>0010a000
+</span></span><span style="display:flex;"><span>EBP<span style="color:#f92672">=</span>aaaaaaaa ESP<span style="color:#f92672">=</span>00104ff0 EIP<span style="color:#f92672">=</span>aaaaaaaa
+</span></span><span style="display:flex;"><span>EFL<span style="color:#f92672">=</span><span style="color:#ae81ff">00010006</span> <span style="color:#f92672">[</span>-----P-<span style="color:#f92672">]</span> CPL<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> II<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> A20<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>SMM<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span> HLT<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><h2 id="limitations">Limitations</h2>
+<p>While StackSupervisor is effective in protecting stack-based attacks, it does not protect from exploits which corrupt
+local variables, such as function pointers, to gain arbitrary
+code execution. Since an attacker could carefully overflow
+a buffer just enough to corrupt a function pointer but not
+overwrite the return address. This type of overflow would not
+be detected since the return address would not be overrun
+which is what StackSupervisor is checking.</p>
+<h2 id="source-code">Source Code</h2>
+<p>Complete Code: <a href="https://github.com/gfoudree/HypervisorStackGuard">https://github.com/gfoudree/HypervisorStackGuard</a></p>
+<p>KVM Patch: <a href="https://github.com/gfoudree/HypervisorStackGuard/blob/master/kvm.patch">https://github.com/gfoudree/HypervisorStackGuard/blob/master/kvm.patch</a></p>
+
+    </article>
+
+    
+    
+    <div class="pagination" style="margin-top:3rem;">
+      <a href="http://localhost:51372/post/linux-kernel-rootkit/">← Linux Kernel Rootkit Basics</a>
+      <a href="http://localhost:51372/post/simple-elf-crypter/">Simple ELF Crypter →</a>
+    </div>
+    
+  </div>
+
+</div>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <div class="footer-left">
+      <strong>x86sec</strong> — a cybersecurity blog<br>
+      &copy; 2026 Grant Foudree
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/gfoudree" rel="noopener">github</a>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51372&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEG-S18TXE Switch Reverse Engineering · x86sec</title>
+
+  <meta name="description" content="Vulnerability research, kernel exploitation, and reverse engineering.">
+  <meta name="author" content="Grant Foudree">
+
+  
+  <meta property="og:title" content="TEG-S18TXE Switch Reverse Engineering">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://localhost:51372/post/switch-reverse-engineering/">
+
+  
+  <link rel="canonical" href="http://localhost:51372/post/switch-reverse-engineering/">
+  <link rel="alternate" type="application/rss+xml" title="x86sec" href="http://localhost:51372/index.xml">
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/main.css">
+
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body><header class="site-header">
+  <div class="container">
+    <a class="site-logo" href="/" data-text="[x86sec]"><span class="bracket">[</span>x86sec<span class="bracket">]</span></a>
+    <nav class="site-nav">
+      
+      <a href="/"
+         class="active">
+        posts
+      </a>
+      
+      <a href="/about/"
+         class="">
+        about
+      </a>
+      
+    </nav>
+  </div>
+</header>
+<main>
+<div class="container">
+
+  
+  <div class="page-hero">
+    <h1>TEG-S18TXE Switch Reverse Engineering</h1>
+    
+    <div class="hero-meta">
+      <span><span class="dot">date</span> November 11, 2017</span>
+      
+      <span><span class="dot">read</span> 3 min</span>
+      
+      <span>
+        
+        <a href="/tags/eeprom" class="tag">eeprom</a>
+        
+        <a href="/tags/reverse-engineering" class="tag">reverse engineering</a>
+        
+        <a href="/tags/trendnet" class="tag">Trendnet</a>
+        
+        <a href="/tags/teg-s18txe" class="tag">TEG-S18TXE</a>
+        
+        <a href="/tags/network-switch" class="tag">network switch</a>
+        
+        <a href="/tags/arduino" class="tag">Arduino</a>
+        
+      </span>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="post-content">
+    <article class="prose">
+      <h2 id="teg-s18txe-switch">TEG-S18TXE Switch</h2>
+<p>I happened to have an old <a href="https://www.trendnet.com/products/proddetail?prod=185_TEG-S18TXE">Trendnet TEG-S18TXE switch</a>
+laying around the lab at work, so I decided to open it up and see if there was
+anything interesting inside. Usually, &ldquo;dumb&rdquo; switches do not contain many interesting hackable components
+as they are rather simplistic devices, however I got lucky and spotted an EEPROM chip on the board. If you look closely,
+you might notice that it is an Atmel AT93C46, 1K serial EEPROM.</p>
+<p><img src="/board1.webp" alt="Placeholder image" title="Placeholder image"></p>
+<p>Interestingly, there appear to be unpopulated headers right below the chip that are connected to some of the pins on the EEPROM.
+Instead of soldering on some pins to the headers, I decided to use a SOP16 Clip which allowed me to access the pins on the DIP chip quite nicely.</p>
+<p><img src="/board2.webp" alt="Placeholder image" title="Placeholder image"></p>
+<p>Following the datasheet <a href="http://www.atmel.com/Images/doc5140.pdf">here</a>, I grabbed a spare Arduino Pro Micro and hooked up the wires as such:</p>
+<p><img src="/chip1.webp" alt="Placeholder image" title="Placeholder image"></p>
+<table>
+  <thead>
+      <tr>
+          <th style="text-align: center">EEPROM</th>
+          <th style="text-align: center">Arduino</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td style="text-align: center">VCC</td>
+          <td style="text-align: center">VCC</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">GND</td>
+          <td style="text-align: center">GND</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">SK</td>
+          <td style="text-align: center">SCLK (Pin 15)</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">CS</td>
+          <td style="text-align: center">Pin 9</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">DI</td>
+          <td style="text-align: center">MOSI (Pin 16)</td>
+      </tr>
+      <tr>
+          <td style="text-align: center">DO</td>
+          <td style="text-align: center">MISO (Pin 14)</td>
+      </tr>
+  </tbody>
+</table>
+<br>
+<p>With everything connected, the only thing left to do was write some code to dump the EEPROM.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;SPI.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#define SS_PIN 9
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">setup</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">pinMode</span>(SS_PIN, OUTPUT);
+</span></span><span style="display:flex;"><span>  <span style="color:#a6e22e">digitalWrite</span>(SS_PIN, LOW);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  Serial.<span style="color:#a6e22e">begin</span>(<span style="color:#ae81ff">9600</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  SPI.<span style="color:#a6e22e">begin</span>();
+</span></span><span style="display:flex;"><span>  SPI.<span style="color:#a6e22e">setClockDivider</span>(SPI_CLOCK_DIV128);
+</span></span><span style="display:flex;"><span>  SPI.<span style="color:#a6e22e">setDataMode</span>(SPI_MODE0);
+</span></span><span style="display:flex;"><span>  SPI.<span style="color:#a6e22e">setBitOrder</span>(MSBFIRST);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">loop</span>() {
+</span></span><span style="display:flex;"><span>  byte data, b1, b2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">128</span>; i<span style="color:#f92672">++</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">digitalWrite</span>(SS_PIN, HIGH);
+</span></span><span style="display:flex;"><span>    SPI.<span style="color:#a6e22e">transfer</span>(<span style="color:#ae81ff">3</span>);
+</span></span><span style="display:flex;"><span>    SPI.<span style="color:#a6e22e">transfer</span>(i); <span style="color:#75715e">//Address to read
+</span></span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">delay</span>(<span style="color:#ae81ff">10</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    b1 <span style="color:#f92672">=</span> SPI.<span style="color:#a6e22e">transfer</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>    b2 <span style="color:#f92672">=</span> SPI.<span style="color:#a6e22e">transfer</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">digitalWrite</span>(SS_PIN, LOW);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    b1 <span style="color:#f92672">=</span> b1 <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>    b2 <span style="color:#f92672">=</span> b2 <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">7</span>;
+</span></span><span style="display:flex;"><span>    data <span style="color:#f92672">=</span> b1 <span style="color:#f92672">|</span> b2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Serial.<span style="color:#a6e22e">print</span>(i, DEC);
+</span></span><span style="display:flex;"><span>    Serial.<span style="color:#a6e22e">print</span>(<span style="color:#e6db74">&#34; = &#34;</span>);
+</span></span><span style="display:flex;"><span>    Serial.<span style="color:#a6e22e">println</span>(data, HEX);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">delay</span>(<span style="color:#ae81ff">50</span>);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Success! Monitoring the serial console gives a dump of the entire chip, but it looks like only the first 0x23 bytes contain data - the rest are zeros.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ xxd eeprom_dump.bin
+</span></span><span style="display:flex;"><span>00000000: 8daa 01ff 1a00 <span style="color:#ae81ff">0112</span> <span style="color:#ae81ff">0002</span> 01ff <span style="color:#ae81ff">0000</span> <span style="color:#ae81ff">0128</span>  ...............<span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>00000010: ffff 01ff <span style="color:#ae81ff">0000</span> 02fa <span style="color:#ae81ff">7800</span> 68ea 01ff <span style="color:#ae81ff">3300</span>  ........x.h...3.
+</span></span><span style="display:flex;"><span>00000020: 012a <span style="color:#ae81ff">0018</span>   
+</span></span></code></pre></div><p>At this point it is pretty difficult to discern what each byte/bit corresponds to. I tried hooking up the switch to a couple computers and doing a large
+file transfer, as well as power-cycling the device several times in an attempt to expose some hints. However when I dumped the EEPROM after, nothing had changed.
+My best guess is that the unpopulated header on the board is used to program some simple configuration settings to the device during production and that is the extent
+to which the chip is written to. Since EEPROM has limited write cycles, combined with the fact that unmanaged switches don&rsquo;t really need to store persistant data, it
+is unlikely this EEPROM gets modified.</p>
+
+    </article>
+
+    
+    
+    <div class="pagination" style="margin-top:3rem;">
+      <a href="http://localhost:51372/post/anti-reverse-engineering/">← Anti Reverse Engineering Tricks</a>
+      
+    </div>
+    
+  </div>
+
+</div>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <div class="footer-left">
+      <strong>x86sec</strong> — a cybersecurity blog<br>
+      &copy; 2026 Grant Foudree
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/gfoudree" rel="noopener">github</a>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

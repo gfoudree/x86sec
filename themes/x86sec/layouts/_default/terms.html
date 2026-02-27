@@ -1,0 +1,19 @@
+{{ define "main" }}
+<div class="container">
+  <div class="page-hero">
+    <div class="hero-label">taxonomy</div>
+    <h1>tags</h1>
+  </div>
+
+  <div class="post-list">
+    <div class="section-header">all topics</div>
+    <div class="tag-cloud">
+      {{ range .Data.Terms.Alphabetical }}
+      <a href="{{ .Page.Permalink }}" class="tag">
+        {{ .Page.Title }} <span style="color:var(--text-muted)">({{ .Count }})</span>
+      </a>
+      {{ end }}
+    </div>
+  </div>
+</div>
+{{ end }}

