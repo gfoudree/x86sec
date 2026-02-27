@@ -12,7 +12,9 @@ Modems are in many devices, perhaps most importantly your cellphone. These devic
 
 
 <img src="/em7455.jpeg" alt="EM7455" style="width:30%;height:80%">
+
 ## Changing IMEI
+
 **WARNING** - It appears as if you can only change the IMEI *ONCE*. I did not try doing any serious resetting of the modem, but issuing multiple commands to set the IMEI fails so beware.
 
 The IMEI on a cellular device uniquely identifies it and is used to block/accept and even track devices. Here we will see how to change it on the em7455 modem. Let's start by checking the current IMEI with ModemManager (I've changed mine for privacy reasons):

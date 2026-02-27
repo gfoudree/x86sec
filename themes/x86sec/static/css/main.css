@@ -192,6 +192,7 @@ nav.site-nav a.active { color: var(--accent); }
   border-bottom: 1px solid var(--border);
   position: relative;
   text-align: center;
+  overflow: hidden; /* prevent decorative pseudo-element from causing horizontal overflow */
 }
 .page-hero::before {
   content: '';
@@ -589,4 +590,7 @@ pre[data-lang]::after {
   /* Ensure tags don't overflow on narrow screens */
   .post-tags { width: 100%; overflow: visible; }
   .tag { white-space: normal; }
+  /* Center header meta & tags on small screens to avoid one-sided gaps */
+  .hero-meta { justify-content: center; }
+  .post-tags { justify-content: center; }
 }
