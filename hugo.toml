@@ -31,3 +31,7 @@ theme = "x86sec"
   name       = "about"
   url        = "/about/"
   weight     = 2
+
+[caches]
+  [caches.images]
+    dir = ':cacheDir/images'
