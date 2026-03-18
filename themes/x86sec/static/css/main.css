@@ -407,7 +407,14 @@ pre code {
   padding: 0;
 }
 .prose p code,
-p code {
+.prose li code,
+.prose td code,
+.post-content p code,
+.post-content li code,
+.post-content td code,
+p code,
+li code,
+td code {
   font-family: var(--font-mono);
   font-size: .83em;
   color: var(--accent);
